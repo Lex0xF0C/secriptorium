@@ -33,7 +33,7 @@ const switchMode = (mode: ModeItem) => {
 <template>
   <!-- style.css の .top クラスが適用される共通ヘッダとモード切り替えタブ -->
   <header class="top">
-    <h1>脆弱性アドバイザリ作成ツール</h1>
+    <h1>secriptorium 脆弱性アドバイザリ・CSAF作成試行ツール</h1>
     <p>入力した内容はこのブラウザの中だけで処理され、外部には送信されません。</p>
 
     <div class="modes" role="tablist">
