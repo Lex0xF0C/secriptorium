@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive } from 'vue'
+import CvssPicker from '../components/CvssPicker.vue'
 import OutputPanel from '../components/OutputPanel.vue'
 import type { OutputTab } from '../lib/output'
 import {
@@ -15,9 +16,11 @@ const form = reactive(emptyForm())
 
 const cvss = computed(() => cvssSummary(form.cvssVector))
 const cvssText = computed(() => {
-  if (!form.cvssVector.trim()) return 'CVSS:3.1/ で始まる、8項目そろったベクターを入力すると、基本スコアを自動で計算します。'
-  if (!cvss.value) return 'CVSS v3.1 のベクターとして読み取れません（8項目がそろっているか確認してください）。'
-  return `基本スコア ${cvss.value.score.toFixed(1)}（${SEVERITY_JA[cvss.value.severity]}）`
+  const v = form.cvssVector.trim()
+  if (!v) return 'ベクターを貼り付けるか、下の「項目を選んでスコアを計算する」から入力できます（CVSS v3.0 / v3.1）。'
+  if (v.startsWith('CVSS:4.0')) return 'CVSS 4.0 は準備中です（CSAF 2.0 が未対応のため）。v3.0 / v3.1 のベクターを入力してください。'
+  if (!cvss.value) return 'CVSS v3.0 / v3.1 のベクターとして読み取れません（8項目がそろっているか確認してください）。'
+  return `CVSS v${cvss.value.version} 基本スコア ${cvss.value.score.toFixed(1)}（${SEVERITY_JA[cvss.value.severity]}）`
 })
 
 const tabs = computed<OutputTab[]>(() => [
@@ -95,10 +98,14 @@ function removeProduct(i: number) {
         <textarea v-model="form.impact" />
       </label>
 
-      <label>CVSS v3.1 ベクター
+      <label>CVSS ベクター（v3.0 / v3.1）
         <input v-model="form.cvssVector" placeholder="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" />
       </label>
       <p class="hint" :class="{ ng: form.cvssVector.trim() && !cvss }">{{ cvssText }}</p>
+      <details>
+        <summary>項目を選んでスコアを計算する（各項目に説明があります）</summary>
+        <CvssPicker v-model="form.cvssVector" />
+      </details>
 
       <label>対策方法
         <textarea v-model="form.fix" />
