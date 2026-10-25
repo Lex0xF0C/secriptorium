@@ -31,7 +31,8 @@ AI agents modifying this repository **MUST** follow the rules below.
 - `src/main.ts` – bootstrap. `src/App.vue` – shell and mode switching.
 - `src/modes/` – one screen per mode (`AdvisoryMode.vue`; future `SbomMode.vue`, `VexMode.vue`).
 - `src/components/OutputPanel.vue` – shared output panel. Modes pass `OutputTab[]` (`src/lib/output.ts`); do not duplicate copy/save logic.
-- `src/lib/` – pure TypeScript logic with **no Vue imports** (types, calculation, document generation). Keep it testable in isolation.
+- `src/lib/` – pure TypeScript logic with **no Vue imports** (`cvss.ts`: CVSS calculation and metric texts; `advisory.ts`: form types and Markdown/CSAF generation; `output.ts`: output tab type). Keep it testable in isolation.
+- `src/components/CvssPicker.vue` – metric picker bound to a vector string via `v-model`.
 - `src/style.css` – global styles with CSS variables and light/dark support.
 - `vite.config.ts` derives `base` from `GITHUB_REPOSITORY`; do not hard-code the repository name.
 
@@ -40,8 +41,8 @@ AI agents modifying this repository **MUST** follow the rules below.
 - User input is passed to Markdown as typed; Markdown syntax in free-text fields is **allowed** (documented in the README), not stripped.
 - The title is single-line (`oneLine()`); table cells go through `esc()` (escapes `|`, line breaks to spaces).
 - The on-screen preview is plain text (`<pre>{{ }}</pre>`); never render generated Markdown/JSON as HTML.
-- **CVSS:** `src/lib/advisory.ts` computes the base score from the vector. Do not alter the formulas without explicit instruction. After any change, verify known vectors (`AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H` = 9.8; `S:C` with all High = 10.0; all `N` impacts = 0).
-- **CSAF 2.0:** output is best-effort. Required-but-missing items are surfaced via `csafWarnings()`. Never claim full conformance; the README tells users to validate with an official validator.
+- **CVSS:** `src/lib/cvss.ts` computes the v3.0 / v3.1 base score from the vector (only the rounding function differs between the two). Do not alter the formulas without explicit instruction. After any change, verify known vectors for both versions (`AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H` = 9.8; `S:C` with all High = 10.0; all `N` impacts = 0). CVSS 4.0 is intentionally unsupported until CSAF supports it; if added, vendor the official calculator logic (BSD-2-Clause) with its notice in `THIRD_PARTY_NOTICES.md`, and show attribution (CVSS is owned by FIRST and used by permission).
+- **CSAF 2.0:** output is best-effort. `scores[].cvss_v3` is emitted only for v3.0/v3.1 vectors (with the matching `version`); a CVSS 4.0 vector is never put into CSAF 2.0. Required-but-missing items are surfaced via `csafWarnings()`. Never claim full conformance; the README tells users to validate with an official validator.
 
 ## 6. Roadmap Notes (SBOM / VEX)
 
