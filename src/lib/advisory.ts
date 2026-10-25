@@ -1,6 +1,11 @@
 // フォームの型、CVSS v3.1 の計算、Markdown と CSAF 2.0 の生成ロジック。
 // 画面（App.vue）から切り離してあり、Vue に依存しません。
 
+import { SEVERITY_JA, cvssSummary } from './cvss'
+
+// 画面側が advisory.ts だけを読み込めるよう、再エクスポートしておく
+export { SEVERITY_JA }
+
 export interface Product {
   name: string
   version: string
@@ -18,7 +23,7 @@ export interface AdvisoryForm {
   cwe: string // 例: "CWE-79 クロスサイト・スクリプティング"
   description: string
   impact: string
-  cvssVector: string // 例: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+  cvssVector: string // 例: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"（v3.0 も可）
   fix: string
   workaround: string
   refs: string
@@ -55,72 +60,6 @@ const esc = (s: string) => s.replace(/\|/g, '\\|').replace(/\n/g, ' ')
 
 export const cveList = (s: string) => T(s).split(/[,、\s]+/).filter(Boolean)
 export const cveOk = (c: string) => /^CVE-\d{4}-\d{4,}$/i.test(c)
-
-// ---- CVSS v3.1（基本値） ----------------------------------------------
-
-export type Severity = 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
-export type Metrics = Record<string, string>
-
-const ALLOWED: Record<string, string> = {
-  AV: 'NALP', AC: 'LH', PR: 'NLH', UI: 'NR', S: 'UC', C: 'HLN', I: 'HLN', A: 'HLN',
-}
-
-/** ベクター文字列を解析する。8項目がそろった v3.1 形式でなければ null。 */
-export function parseCvss31(vector: string): Metrics | null {
-  const parts = T(vector).split('/')
-  if (parts[0] !== 'CVSS:3.1') return null
-  const m: Metrics = {}
-  for (const part of parts.slice(1)) {
-    const [k, v] = part.split(':')
-    if (!k || !v || !(k in ALLOWED) || k in m || v.length !== 1 || !ALLOWED[k].includes(v)) return null
-    m[k] = v
-  }
-  return Object.keys(ALLOWED).every((k) => k in m) ? m : null
-}
-
-const W = {
-  AV: { N: 0.85, A: 0.62, L: 0.55, P: 0.2 } as Record<string, number>,
-  AC: { L: 0.77, H: 0.44 } as Record<string, number>,
-  UI: { N: 0.85, R: 0.62 } as Record<string, number>,
-  CIA: { H: 0.56, L: 0.22, N: 0 } as Record<string, number>,
-  PR_U: { N: 0.85, L: 0.62, H: 0.27 } as Record<string, number>,
-  PR_C: { N: 0.85, L: 0.68, H: 0.5 } as Record<string, number>,
-}
-
-function roundup(x: number): number {
-  const i = Math.round(x * 100000)
-  return i % 10000 === 0 ? i / 100000 : (Math.floor(i / 10000) + 1) / 10
-}
-
-export function cvssScore(m: Metrics): number {
-  const changed = m.S === 'C'
-  const iss = 1 - (1 - W.CIA[m.C]) * (1 - W.CIA[m.I]) * (1 - W.CIA[m.A])
-  const impact = changed ? 7.52 * (iss - 0.029) - 3.25 * Math.pow(iss - 0.02, 15) : 6.42 * iss
-  const pr = (changed ? W.PR_C : W.PR_U)[m.PR]
-  const exploit = 8.22 * W.AV[m.AV] * W.AC[m.AC] * pr * W.UI[m.UI]
-  if (impact <= 0) return 0
-  return changed ? roundup(Math.min(1.08 * (impact + exploit), 10)) : roundup(Math.min(impact + exploit, 10))
-}
-
-export function severityOf(score: number): Severity {
-  if (score === 0) return 'NONE'
-  if (score < 4) return 'LOW'
-  if (score < 7) return 'MEDIUM'
-  if (score < 9) return 'HIGH'
-  return 'CRITICAL'
-}
-
-export const SEVERITY_JA: Record<Severity, string> = {
-  NONE: 'なし', LOW: '注意', MEDIUM: '警告', HIGH: '重要', CRITICAL: '緊急',
-}
-
-/** ベクターから基本スコアと深刻度を求める（形式が正しくなければ null）。 */
-export function cvssSummary(vector: string): { score: number; severity: Severity } | null {
-  const m = parseCvss31(vector)
-  if (!m) return null
-  const score = cvssScore(m)
-  return { score, severity: severityOf(score) }
-}
 
 // ---- Markdown ---------------------------------------------------------
 
@@ -159,7 +98,7 @@ export function buildMarkdown(f: AdvisoryForm): string {
     L.push('## 脆弱性がもたらす脅威', '')
     if (T(f.impact)) L.push(T(f.impact), '')
     if (cv) {
-      L.push(`- CVSS v3.1 基本値：${cv.score.toFixed(1)}（${SEVERITY_JA[cv.severity]}）`)
+      L.push(`- CVSS v${cv.version} 基本値：${cv.score.toFixed(1)}（${SEVERITY_JA[cv.severity]}）`)
       L.push(`- ベクター：${T(f.cvssVector)}`, '')
     }
   }
@@ -199,7 +138,11 @@ export function csafWarnings(f: AdvisoryForm): string[] {
   if (!f.products.some((p) => T(p.name) && T(p.version))) w.push('影響を受ける製品とバージョン')
   if (cves.length === 0 || !cves.every(cveOk)) w.push('CVE番号（CVE-YYYY-NNNN の形式）')
   if (!parseCwe(f.cwe)) w.push('CWE（CWE-79 のような形式で始める）')
-  if (!cvssSummary(f.cvssVector)) w.push('CVSS v3.1 ベクター')
+  if (!cvssSummary(f.cvssVector)) {
+    w.push(T(f.cvssVector).startsWith('CVSS:4.0')
+      ? 'CVSS v3.0/3.1 ベクター（CVSS 4.0 は CSAF 2.0 では使えません）'
+      : 'CVSS v3.0/3.1 ベクター')
+  }
   return w
 }
 
@@ -233,7 +176,7 @@ export function buildCsaf(f: AdvisoryForm) {
         ? [{
             products: ids,
             cvss_v3: {
-              version: '3.1',
+              version: cv.version,
               vectorString: T(f.cvssVector),
               baseScore: cv.score,
               baseSeverity: cv.severity,
