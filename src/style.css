@@ -30,7 +30,7 @@ body {
 @media (max-width: 860px) { .out { position: static; max-height: none; } }
 label { display: block; font-weight: 600; font-size: 0.88rem; margin: 14px 0 4px; }
 label:first-child { margin-top: 0; }
-input, textarea {
+input, textarea, select {
   width: 100%; font: inherit; font-weight: 400; color: var(--ink); background: var(--bg);
   border: 1px solid var(--line); border-radius: 6px; padding: 7px 9px;
 }
@@ -56,4 +56,19 @@ pre {
   white-space: pre-wrap; word-break: break-word; margin: 0; min-height: 320px; padding: 12px;
   font: 13px/1.65 ui-monospace, "Cascadia Mono", Consolas, monospace;
   background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+}
+
+details { margin-top: 8px; }
+summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+.cvss-picker select { width: auto; }
+.mdesc { margin: 0 0 4px; color: var(--sub); font-size: 0.82rem; }
+.opt {
+  display: grid; grid-template-columns: 1.4em 8.5em 1fr; column-gap: 6px; align-items: start;
+  font-weight: 400; font-size: 0.88rem; margin: 6px 0;
+}
+.opt input { width: auto; margin: 0.4em 0 0; justify-self: start; }
+.opt .on { font-weight: 600; }
+@media (max-width: 560px) {
+  .opt { grid-template-columns: 1.4em 1fr; }
+  .opt .od { grid-column: 2; }
 }
