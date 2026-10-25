@@ -4,7 +4,8 @@
 import { SEVERITY_JA, cvssSummary } from './cvss'
 
 // 画面側が advisory.ts だけを読み込めるよう、再エクスポートしておく
-export { SEVERITY_JA }
+// cvssSummary もエクスポートを再度する必要がある
+export { SEVERITY_JA, cvssSummary }
 
 export interface Product {
   name: string
