@@ -1,5 +1,5 @@
 import { createApp } from 'vue'
-import AdvisoryMode from './modes/AdvisoryMode.vue'
+import App from './App.vue'
 import './style.css'
 
-createApp(AdvisoryMode).mount('#app')
+createApp(App).mount('#app')
