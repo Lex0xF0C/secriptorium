@@ -22,36 +22,40 @@ const metrics = ref<Metrics>({
   C: 'H', I: 'H', A: 'H'
 })
 
-// ユーザーがテキスト入力欄に直接書き込むための文字列
+// テキスト入力用の文字列
 const vectorInput = ref('CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H')
 const parseError = ref('')
 
-// 現在のボタン選択状態から生成される正しいベクトル文字列
+// 現在のボタン選択から生成される正しいベクトル文字列
 const currentVector = computed(() => buildVector(version.value, metrics.value))
 
-// ボタンが押されたとき：メトリックを更新し、入力欄のテキストも同期する
+// ボタンが押されたとき
 const selectOption = (metricCode: string, optionCode: string) => {
   metrics.value = { ...metrics.value, [metricCode]: optionCode }
   vectorInput.value = buildVector(version.value, metrics.value)
   parseError.value = ''
 }
 
-// バージョンが切り替わったとき
-const handleVersionChange = (newVer: CvssVersion) => {
-  version.value = newVer
-  vectorInput.value = buildVector(newVer, metrics.value)
+// バージョン変更
+const setVersion = (v: CvssVersion) => {
+  version.value = v
+  vectorInput.value = buildVector(v, metrics.value)
 }
 
-// ユーザーがテキストボックスを直接編集し、「適用」ボタンを押したとき、またはフォーカスが外れたとき（あるいは自動）
-const applyManualVector = () => {
-  const trimmed = vectorInput.value.trim()
-  const parsed = parseCvss(trimmed)
+// テキストボックスの変更を適用するボタンが押されたとき
+const applyVector = () => {
+  const val = vectorInput.value
+  if (typeof val !== 'string') {
+    parseError.value = '文字列を入力してください'
+    return
+  }
+  const parsed = parseCvss(val.trim())
   if (parsed) {
     version.value = parsed.version
     metrics.value = parsed.metrics
     parseError.value = ''
   } else {
-    parseError.value = 'ベクトルの形式が正しくありません (例: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H)'
+    parseError.value = 'ベクトルの形式が正しくありません (例: CVSS:3.1/AV:N/...)'
   }
 }
 
@@ -59,7 +63,7 @@ const applyManualVector = () => {
 const score = computed(() => cvssScore(version.value, metrics.value))
 const severity = computed(() => severityOf(score.value))
 
-// 日本語の解説文のサマリー
+// 日本語の解説文（※必ず文字列のベクトルを渡す）
 const summaryText = computed(() => cvssSummary(currentVector.value))
 
 // OutputPanel に渡すタブデータの作成
@@ -90,7 +94,7 @@ const tabs = computed(() => [
   <div class="cvss-calculator-mode">
     <div class="calculator-main">
       <h2>CVSS v3.x グラフィカル計算機</h2>
-      <p class="subtitle">項目をクリックして選択するか、ベクトル文字列を直接入力して「適用」を押してください。</p>
+      <p class="subtitle">項目をクリックするか、ベクトル文字列を入力して「適用」を押してください。</p>
 
       <!-- バージョン切り替え ＆ ベクトル直接入力 -->
       <div class="vector-bar">
@@ -100,7 +104,7 @@ const tabs = computed(() => [
               type="radio" 
               name="cvss-ver" 
               :checked="version === '3.1'" 
-              @change="handleVersionChange('3.1')" 
+              @change="setVersion('3.1')" 
             /> CVSS v3.1
           </label>
           <label>
@@ -108,7 +112,7 @@ const tabs = computed(() => [
               type="radio" 
               name="cvss-ver" 
               :checked="version === '3.0'" 
-              @change="handleVersionChange('3.0')" 
+              @change="setVersion('3.0')" 
             /> CVSS v3.0
           </label>
         </div>
@@ -117,9 +121,9 @@ const tabs = computed(() => [
             type="text" 
             v-model="vectorInput" 
             placeholder="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" 
-            @keyup.enter="applyManualVector"
+            @keyup.enter="applyVector"
           />
-          <button type="button" @click="applyManualVector">適用</button>
+          <button type="button" @click="applyVector">適用</button>
         </div>
       </div>
       <p v-if="parseError" class="error-msg">{{ parseError }}</p>
