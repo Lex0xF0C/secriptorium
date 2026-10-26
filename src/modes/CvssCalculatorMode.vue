@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { 
   METRICS, 
   cvssScore, 
@@ -22,32 +22,38 @@ const metrics = ref<Metrics>({
   C: 'H', I: 'H', A: 'H'
 })
 
-// 現在のベクトル文字列を生成
-const currentVector = computed(() => buildVector(version.value, metrics.value))
-
-// ベクトル入力欄用のステート（初期値はデフォルトベクトル）
-const vectorInput = ref(currentVector.value)
+// ユーザーがテキスト入力欄に直接書き込むための文字列
+const vectorInput = ref('CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H')
 const parseError = ref('')
 
-// メトリックやバージョンが変わったら、上部の入力欄の文字列も自動同期する
-watch(currentVector, (newVal) => {
-  if (newVal) {
-    vectorInput.value = newVal
-  }
-})
+// 現在のボタン選択状態から生成される正しいベクトル文字列
+const currentVector = computed(() => buildVector(version.value, metrics.value))
 
-// ユーザーが入力欄を書き換えたら、安全にパースして各ボタンの状態を更新する
-watch(vectorInput, (val) => {
-  if (!val || typeof val !== 'string') return
-  const parsed = parseCvss(val)
+// ボタンが押されたとき：メトリックを更新し、入力欄のテキストも同期する
+const selectOption = (metricCode: string, optionCode: string) => {
+  metrics.value = { ...metrics.value, [metricCode]: optionCode }
+  vectorInput.value = buildVector(version.value, metrics.value)
+  parseError.value = ''
+}
+
+// バージョンが切り替わったとき
+const handleVersionChange = (newVer: CvssVersion) => {
+  version.value = newVer
+  vectorInput.value = buildVector(newVer, metrics.value)
+}
+
+// ユーザーがテキストボックスを直接編集し、「適用」ボタンを押したとき、またはフォーカスが外れたとき（あるいは自動）
+const applyManualVector = () => {
+  const trimmed = vectorInput.value.trim()
+  const parsed = parseCvss(trimmed)
   if (parsed) {
     version.value = parsed.version
     metrics.value = parsed.metrics
     parseError.value = ''
-  } else if (val.trim() !== '') {
-    parseError.value = 'ベクトルの形式が正しくありません (例: CVSS:3.1/AV:N/...)'
+  } else {
+    parseError.value = 'ベクトルの形式が正しくありません (例: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H)'
   }
-})
+}
 
 // スコアと深刻度の算出
 const score = computed(() => cvssScore(version.value, metrics.value))
@@ -55,11 +61,6 @@ const severity = computed(() => severityOf(score.value))
 
 // 日本語の解説文のサマリー
 const summaryText = computed(() => cvssSummary(metrics.value))
-
-// 各項目の選択変更
-const selectOption = (metricCode: string, optionCode: string) => {
-  metrics.value = { ...metrics.value, [metricCode]: optionCode }
-}
 
 // OutputPanel に渡すタブデータの作成
 const tabs = computed(() => [
@@ -89,20 +90,36 @@ const tabs = computed(() => [
   <div class="cvss-calculator-mode">
     <div class="calculator-main">
       <h2>CVSS v3.x グラフィカル計算機</h2>
-      <p class="subtitle">項目をクリックして選択するか、ベクトル文字列を直接貼り付けてください。</p>
+      <p class="subtitle">項目をクリックして選択するか、ベクトル文字列を直接入力して「適用」を押してください。</p>
 
       <!-- バージョン切り替え ＆ ベクトル直接入力 -->
       <div class="vector-bar">
         <div class="version-switch">
-          <label><input type="radio" v-model="version" value="3.1" /> CVSS v3.1</label>
-          <label><input type="radio" v-model="version" value="3.0" /> CVSS v3.0</label>
+          <label>
+            <input 
+              type="radio" 
+              name="cvss-ver" 
+              :checked="version === '3.1'" 
+              @change="handleVersionChange('3.1')" 
+            /> CVSS v3.1
+          </label>
+          <label>
+            <input 
+              type="radio" 
+              name="cvss-ver" 
+              :checked="version === '3.0'" 
+              @change="handleVersionChange('3.0')" 
+            /> CVSS v3.0
+          </label>
         </div>
         <div class="vector-input-wrap">
           <input 
             type="text" 
             v-model="vectorInput" 
             placeholder="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" 
+            @keyup.enter="applyManualVector"
           />
+          <button type="button" @click="applyManualVector">適用</button>
         </div>
       </div>
       <p v-if="parseError" class="error-msg">{{ parseError }}</p>
@@ -166,11 +183,13 @@ const tabs = computed(() => [
   flex-wrap: wrap;
 }
 .vector-input-wrap {
+  display: flex;
+  gap: 8px;
   flex: 1;
   min-width: 300px;
 }
 .vector-input-wrap input {
-  width: 100%;
+  flex: 1;
   padding: 8px 12px;
   font-family: monospace;
   font-size: 0.9rem;
