@@ -2,14 +2,13 @@
 import { ref, computed } from 'vue'
 import { 
   METRICS, 
-  cvssSummary, 
+  cvssScore, // ← ここに cvssScore を追加する
   severityOf, 
   SEVERITY_JA, 
-  cvssSummary as getCvssSummary, 
+  cvssSummary, 
   type CvssVersion, 
   type Metrics, 
-  parseCvss, // parseVector から parseCvss に変更
-  buildVector 
+  parseCvss 
 } from '../lib/cvss'
 import OutputPanel from '../components/OutputPanel.vue'
 
