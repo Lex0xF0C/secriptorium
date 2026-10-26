@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { I18N_JA } from '../lib/i18n-ja'
 import OutputPanel from '../components/OutputPanel.vue'
 
@@ -66,7 +66,7 @@ const calculatedSev = computed(() => {
   return 'critical'
 })
 
-// CWE選択連動（候補から選ばれたら説明と影響を自動挿入）
+// CWE選択連動
 const handleCweChange = () => {
   const val = cwe.value.trim()
   const cweKey = val.split(' ')[0]
@@ -74,7 +74,6 @@ const handleCweChange = () => {
   if (!tx) return
 
   let skipped = 0
-  // 概要説明の挿入
   if (!desc.value.trim() || desc.value === autoDesc.value) {
     desc.value = tx[0]
     autoDesc.value = tx[0]
@@ -82,7 +81,6 @@ const handleCweChange = () => {
     skipped++
   }
 
-  // 脅威影響の挿入
   const impText = L.imp[tx[1]] || tx[1]
   if (!impact.value.trim() || impact.value === autoImpact.value) {
     impact.value = impText
@@ -96,7 +94,6 @@ const handleCweChange = () => {
 
 // 定型文ボタン（presets）の挿入ハンドラ
 const applyPreset = (targetField: string, textTemplate: string) => {
-  // プレースホルダーやキーの解決（impactなどの場合）
   const resolvedText = L.imp[textTemplate] || textTemplate
   
   switch (targetField) {
@@ -206,7 +203,6 @@ const markdownOutput = computed(() => {
   return Ls.join('\n').replace(/\n+$/, '\n')
 })
 
-// OutputPanel に渡すタブデータの定義
 const tabs = computed(() => [
   {
     key: 'markdown',
@@ -239,16 +235,19 @@ const tabs = computed(() => [
 </script>
 
 <template>
-  <div class="advisory-mode">
-    <div class="advisory-form-container">
+  <div class="cols">
+    <!-- 左側：入力パネル -->
+    <div class="panel advisory-form-panel">
       <h2>{{ L.ui.h1 }}</h2>
-      <p class="intro-text">{{ L.ui.intro }}</p>
+      <p class="hint">{{ L.ui.intro }}</p>
 
-      <div v-if="toastMsg" class="toast-banner">{{ toastMsg }}</div>
+      <div v-if="toastMsg" class="bar" style="margin-top: 10px;">
+        <span class="status" style="color: var(--accent); font-weight: 600;">{{ toastMsg }}</span>
+      </div>
 
-      <form @submit.prevent class="advisory-form">
+      <form @submit.prevent class="form-container">
         <!-- 状況ステータス -->
-        <div class="form-group">
+        <div>
           <label>{{ L.ui.stl }}</label>
           <select v-model="status">
             <option value="normal">{{ L.ui.st0 }}</option>
@@ -259,48 +258,48 @@ const tabs = computed(() => [
         </div>
 
         <!-- タイトル -->
-        <div class="form-group">
-          <label>{{ L.ui.tl.split('|')[0] }} <span class="hint">{{ L.ui.tl.split('|')[1] }}</span></label>
+        <div>
+          <label>{{ L.ui.tl.split('|')[0] }}</label>
+          <p class="hint">{{ L.ui.tl.split('|')[1] }}</p>
           <input type="text" v-model="title" :placeholder="L.ui.tph" />
         </div>
 
         <!-- 管理番号・CVE -->
-        <div class="form-row">
-          <div class="form-group">
+        <div class="row">
+          <div>
             <label>{{ L.ui.aidl.split('|')[0] }}</label>
             <input type="text" v-model="aid" placeholder="ADV-2026-001" />
           </div>
-          <div class="form-group">
+          <div>
             <label>{{ L.ui.cvel.split('|')[0] }}</label>
             <input type="text" v-model="cve" placeholder="CVE-2026-1234" />
           </div>
         </div>
 
         <!-- 公開日・更新日 -->
-        <div class="form-row">
-          <div class="form-group">
+        <div class="row">
+          <div>
             <label>{{ L.ui.publ }}</label>
             <input type="date" v-model="pub" />
           </div>
-          <div class="form-group">
+          <div>
             <label>{{ L.ui.updl.split('|')[0] }}</label>
             <input type="date" v-model="upd" />
           </div>
         </div>
 
         <!-- 概要 + プリセットボタン -->
-        <div class="form-group">
-          <div class="label-with-presets">
+        <div>
+          <div class="label-bar">
             <label>{{ L.ui.suml.split('|')[0] }}</label>
-            <div class="preset-inline-btns">
+            <div class="preset-btns">
               <button 
                 v-for="(p, idx) in L.presets.summary" 
                 :key="idx" 
                 type="button" 
-                class="mini-pre-btn"
                 @click="applyPreset('summary', p[1])"
               >
-                ＋{{ p[0] }}
+                +{{ p[0] }}
               </button>
             </div>
           </div>
@@ -308,29 +307,28 @@ const tabs = computed(() => [
         </div>
 
         <!-- 影響を受ける製品 -->
-        <div class="form-group">
+        <div>
           <label>{{ L.ui.prodl.split('|')[0] }}</label>
-          <div v-for="(p, index) in prods" :key="index" class="prod-row">
+          <div v-for="(p, index) in prods" :key="index" class="prod">
             <input type="text" v-model="p.name" :placeholder="L.ui.pn" />
             <input type="text" v-model="p.ver" :placeholder="L.ui.pv" />
-            <button type="button" class="del-btn" @click="removeProd(index)">{{ L.ui.pdel }}</button>
+            <button type="button" @click="removeProd(index)">{{ L.ui.pdel }}</button>
           </div>
-          <button type="button" class="secondary-btn" @click="addProd">+ {{ L.ui.addprod }}</button>
+          <button type="button" @click="addProd">+ {{ L.ui.addprod }}</button>
         </div>
 
         <!-- バージョン確認方法 + プリセットボタン -->
-        <div class="form-group">
-          <div class="label-with-presets">
+        <div>
+          <div class="label-bar">
             <label>{{ L.ui.vcl }}</label>
-            <div class="preset-inline-btns">
+            <div class="preset-btns">
               <button 
                 v-for="(p, idx) in L.presets.versioncheck" 
                 :key="idx" 
                 type="button" 
-                class="mini-pre-btn"
                 @click="applyPreset('versioncheck', p[1])"
               >
-                ＋{{ p[0] }}
+                +{{ p[0] }}
               </button>
             </div>
           </div>
@@ -338,33 +336,32 @@ const tabs = computed(() => [
         </div>
 
         <!-- 脆弱性の種類（CWE選択連動） -->
-        <div class="form-group">
+        <div>
           <label>{{ L.ui.cwel }}</label>
-          <select v-model="cwe" @change="handleCweChange" class="cwe-select">
+          <select v-model="cwe" @change="handleCweChange">
             <option value="">-- CWEを選択してください --</option>
             <option :value="L.unk">{{ L.unk }}</option>
             <option v-for="c in L.cwes" :key="c" :value="c">{{ c }}</option>
           </select>
         </div>
 
-        <div v-if="cwe === L.unk" class="form-group">
+        <div v-if="cwe === L.unk">
           <label>{{ L.ui.cwenl }}</label>
           <input type="text" v-model="cwenote" :placeholder="L.ui.cwenph" />
         </div>
 
         <!-- 脆弱性の説明（Description） + プリセットボタン -->
-        <div class="form-group">
-          <div class="label-with-presets">
+        <div>
+          <div class="label-bar">
             <label>{{ L.ui.descl.split('|')[0] }}</label>
-            <div class="preset-inline-btns">
+            <div class="preset-btns">
               <button 
                 v-for="(p, idx) in L.presets.desc" 
                 :key="idx" 
                 type="button" 
-                class="mini-pre-btn"
                 @click="applyPreset('desc', p[1])"
               >
-                ＋{{ p[0] }}
+                +{{ p[0] }}
               </button>
             </div>
           </div>
@@ -372,15 +369,14 @@ const tabs = computed(() => [
         </div>
 
         <!-- 脅威（Impact） + プリセットボタン（被害シナリオ別） -->
-        <div class="form-group">
-          <div class="label-with-presets">
+        <div>
+          <div class="label-bar">
             <label>{{ L.ui.impl.split('|')[0] }}</label>
-            <div class="preset-inline-btns">
+            <div class="preset-btns">
               <button 
                 v-for="(p, idx) in L.presets.impact" 
                 :key="idx" 
                 type="button" 
-                class="mini-pre-btn scenario-badge"
                 @click="applyPreset('impact', p[1])"
               >
                 ⚡ {{ p[0] }}
@@ -391,34 +387,33 @@ const tabs = computed(() => [
         </div>
 
         <!-- CVSS 基本スコア & ベクター -->
-        <div class="form-row">
-          <div class="form-group">
+        <div class="row">
+          <div>
             <label>{{ L.ui.scorel }}</label>
             <input type="text" v-model="score" placeholder="6.5" />
           </div>
-          <div class="form-group">
+          <div>
             <label>{{ L.ui.sevl }}</label>
             <input type="text" :value="calculatedSev ? L.sev[calculatedSev] : ''" disabled placeholder="自動判定" />
           </div>
         </div>
-        <div class="form-group">
+        <div>
           <label>{{ L.ui.vecl }}</label>
           <input type="text" v-model="vector" placeholder="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" />
         </div>
 
         <!-- 対策方法 + プリセット -->
-        <div class="form-group">
-          <div class="label-with-presets">
+        <div>
+          <div class="label-bar">
             <label>{{ L.ui.fixl.split('|')[0] }}</label>
-            <div class="preset-inline-btns">
+            <div class="preset-btns">
               <button 
                 v-for="(p, idx) in L.presets.fix" 
                 :key="idx" 
                 type="button" 
-                class="mini-pre-btn"
                 @click="applyPreset('fix', p[1])"
               >
-                ＋{{ p[0] }}
+                +{{ p[0] }}
               </button>
             </div>
           </div>
@@ -426,18 +421,17 @@ const tabs = computed(() => [
         </div>
 
         <!-- 回避策 + プリセット -->
-        <div class="form-group">
-          <div class="label-with-presets">
+        <div>
+          <div class="label-bar">
             <label>{{ L.ui.workl.split('|')[0] }}</label>
-            <div class="preset-inline-btns">
+            <div class="preset-btns">
               <button 
                 v-for="(p, idx) in L.presets.work" 
                 :key="idx" 
                 type="button" 
-                class="mini-pre-btn"
                 @click="applyPreset('work', p[1])"
               >
-                ＋{{ p[0] }}
+                +{{ p[0] }}
               </button>
             </div>
           </div>
@@ -445,24 +439,23 @@ const tabs = computed(() => [
         </div>
 
         <!-- 関連情報 -->
-        <div class="form-group">
+        <div>
           <label>{{ L.ui.refl }}</label>
           <textarea v-model="refs" rows="2" placeholder="https://jvn.jp/..."></textarea>
         </div>
 
         <!-- 謝辞 + プリセット -->
-        <div class="form-group">
-          <div class="label-with-presets">
+        <div>
+          <div class="label-bar">
             <label>{{ L.ui.credl.split('|')[0] }}</label>
-            <div class="preset-inline-btns">
+            <div class="preset-btns">
               <button 
                 v-for="(p, idx) in L.presets.credit" 
                 :key="idx" 
                 type="button" 
-                class="mini-pre-btn"
                 @click="applyPreset('credit', p[1])"
               >
-                ＋{{ p[0] }}
+                +{{ p[0] }}
               </button>
             </div>
           </div>
@@ -470,18 +463,17 @@ const tabs = computed(() => [
         </div>
 
         <!-- 連絡先 + プリセット -->
-        <div class="form-group">
-          <div class="label-with-presets">
+        <div>
+          <div class="label-bar">
             <label>{{ L.ui.contl }}</label>
-            <div class="preset-inline-btns">
+            <div class="preset-btns">
               <button 
                 v-for="(p, idx) in L.presets.contact" 
                 :key="idx" 
                 type="button" 
-                class="mini-pre-btn"
                 @click="applyPreset('contact', p[1])"
               >
-                ＋{{ p[0] }}
+                +{{ p[0] }}
               </button>
             </div>
           </div>
@@ -490,153 +482,38 @@ const tabs = computed(() => [
       </form>
     </div>
 
-    <!-- 右側出力パネル -->
-    <div class="advisory-output-container">
+    <!-- 右側：出力パネル（共通クラス適用） -->
+    <div class="panel out">
       <OutputPanel :tabs="tabs" base-name="advisory" />
     </div>
   </div>
 </template>
 
 <style scoped>
-.advisory-mode {
-  display: grid;
-  grid-template-columns: 1fr 400px;
-  gap: 24px;
-  align-items: start;
-}
-@media (max-width: 1024px) {
-  .advisory-mode {
-    grid-template-columns: 1fr;
-  }
-}
-.advisory-form-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  background: var(--panel, #1e1e1e);
-  border: 1px solid var(--line, #333);
-  border-radius: 8px;
-  padding: 20px;
-}
-.intro-text {
-  font-size: 0.85rem;
-  color: var(--sub, #aaa);
-  margin: 0 0 10px 0;
-  line-height: 1.4;
-}
-.toast-banner {
-  background: rgba(58, 117, 196, 0.2);
-  border: 1px solid var(--accent, #3a75c4);
-  color: #fff;
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  text-align: center;
-}
-.advisory-form {
+.form-container {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  margin-top: 14px;
 }
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-label {
-  font-size: 0.85rem;
-  font-weight: bold;
-  color: #fff;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.hint {
-  font-weight: normal;
-  font-size: 0.75rem;
-  color: var(--sub, #888);
-}
-input[type="text"],
-input[type="date"],
-select,
-textarea {
-  background: #252525;
-  border: 1px solid var(--line, #444);
-  border-radius: 4px;
-  padding: 8px 10px;
-  color: #fff;
-  font-size: 0.9rem;
-  font-family: inherit;
-}
-input:focus, select:focus, textarea:focus {
-  outline: none;
-  border-color: var(--accent, #3a75c4);
-}
-.label-with-presets {
+.label-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 6px;
+  margin: 14px 0 4px;
 }
-.preset-inline-btns {
+.label-bar label {
+  margin: 0 !important;
+}
+.preset-btns {
   display: flex;
   gap: 4px;
   flex-wrap: wrap;
 }
-.mini-pre-btn {
-  background: #2d2d2d;
-  border: 1px solid #555;
-  border-radius: 3px;
-  padding: 2px 6px;
-  font-size: 0.75rem;
-  color: #ccc;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.mini-pre-btn:hover {
-  background: var(--accent, #3a75c4);
-  color: #fff;
-  border-color: var(--accent, #3a75c4);
-}
-.scenario-badge {
-  background: rgba(58, 117, 196, 0.15);
-  border-color: #3a75c4;
-  color: #e2e8f0;
-}
-.prod-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr auto;
-  gap: 8px;
-  margin-bottom: 6px;
-}
-.del-btn {
-  background: #552222;
-  border: 1px solid #773333;
-  color: #fff;
-  padding: 0 10px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.del-btn:hover {
-  background: #882222;
-}
-.secondary-btn {
-  background: transparent;
-  border: 1px dashed var(--line, #555);
-  border-radius: 4px;
-  padding: 6px;
-  color: var(--sub, #aaa);
-  cursor: pointer;
-  font-size: 0.85rem;
-}
-.secondary-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #fff;
+.preset-btns button {
+  padding: 3px 8px;
+  font-size: 0.8rem;
 }
 </style>
