@@ -141,7 +141,7 @@ const tabs = computed(() => [
         <div class="score-badge">{{ SEVERITY_JA[severity] }} ({{ severity }})</div>
       </div>
 
-      <!-- 💡 リッチなお助けプリセット群（シナリオ解説付き・コントラスト修正版） -->
+      <!-- 💡 リッチなお助けプリセット群（通常時の文字色を改善） -->
       <div class="preset-section">
         <span class="preset-title">💡 よくある脆弱性シナリオ（クリックで反映）:</span>
         <div class="preset-cards">
@@ -266,7 +266,7 @@ const tabs = computed(() => [
 .score-tower[data-severity="LOW"] .score-badge { background: #2E8B57; color: #fff; }
 .score-tower[data-severity="NONE"] .score-badge { background: #555; color: #fff; }
 
-/* プリセットカードのスタイル（ダークテーマのコントラストを修正） */
+/* プリセットカードのスタイル */
 .preset-section {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--line, #333);
@@ -287,7 +287,7 @@ const tabs = computed(() => [
   gap: 10px;
 }
 .preset-card {
-  background: var(--panel, #1e1e1e); /* 他のカードと合わせたダーク背景 */
+  background: var(--panel, #252525);
   border: 1px solid var(--line, #444);
   border-radius: 6px;
   padding: 10px 12px;
@@ -296,21 +296,26 @@ const tabs = computed(() => [
   display: flex;
   flex-direction: column;
   gap: 4px;
-  color: inherit;
+  color: #222; /* 通常時はダークな背景に映えるしっかりした濃色・黒字系、あるいはクリアな明色 */
+}
+.preset-card {
+  background: #f5f7fa; /* 明るめの背景にして、黒文字がくっきり映えるように調整 */
+  border: 1px solid #d1d5db;
+  color: #111827; /* はっきりとした黒文字 */
 }
 .preset-card:hover {
-  background: rgba(58, 117, 196, 0.2);
+  background: #e5e7eb;
   border-color: var(--accent, #3a75c4);
   transform: translateY(-1px);
 }
 .preset-header {
   font-size: 0.85rem;
   font-weight: bold;
-  color: #fff; /* はっきりと読める白文字 */
+  color: #111827; /* 通常時からくっきりした黒文字 */
 }
 .preset-desc {
   font-size: 0.75rem;
-  color: #aaa; /* 読みやすい明るめのグレー */
+  color: #4b5563; /* 読みやすい少し濃い目のグレー */
   line-height: 1.3;
 }
 
