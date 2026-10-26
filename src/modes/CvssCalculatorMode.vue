@@ -82,7 +82,7 @@ const tabs = computed(() => [
   {
     key: 'markdown',
     label: 'Markdown',
-    content: `### CVSS v${version.value} 評価結果\n- **スコア**: ${score.value.toFixed(1)} (${SEVERITY_JA[severity.value]})\n- **ベクトル**: \`${currentVector.value}\`\n- **概要**: ${summaryText.value}\n`,
+    content: `### CVSS v${version.value} 評価結果\n- **スコア**: ${score.value.toFixed(1)} (${SEVERITY_JA[severity.value]})\n- **ベクトル**: \`${currentVector.value}\`\n`,
     filename: 'cvss-result.md'
   },
   {
@@ -93,7 +93,6 @@ const tabs = computed(() => [
       vector: currentVector.value,
       score: score.value,
       severity: severity.value,
-      summary: summaryText.value,
       metrics: metrics.value
     }, null, 2),
     filename: 'cvss-result.json'
