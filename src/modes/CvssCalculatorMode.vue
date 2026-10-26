@@ -42,7 +42,7 @@ const setVersion = (v: CvssVersion) => {
   vectorInput.value = buildVector(v, metrics.value)
 }
 
-// テキストボックスの変更を適用するボタンが押されたとき
+// テキストボックスの変更を適用する
 const applyVector = () => {
   const val = vectorInput.value
   if (typeof val !== 'string') {
@@ -59,11 +59,22 @@ const applyVector = () => {
   }
 }
 
+// 【新規】お助けプリセットを適用する関数
+const applyPreset = (presetVector: string, presetVer: CvssVersion = '3.1') => {
+  version.value = presetVer
+  vectorInput.value = presetVector
+  const parsed = parseCvss(presetVector)
+  if (parsed) {
+    metrics.value = parsed.metrics
+    parseError.value = ''
+  }
+}
+
 // スコアと深刻度の算出
 const score = computed(() => cvssScore(version.value, metrics.value))
 const severity = computed(() => severityOf(score.value))
 
-// 日本語の解説文（※必ず文字列のベクトルを渡す）
+// 日本語の解説文
 const summaryText = computed(() => cvssSummary(currentVector.value))
 
 // OutputPanel に渡すタブデータの作成
@@ -94,7 +105,7 @@ const tabs = computed(() => [
   <div class="cvss-calculator-mode">
     <div class="calculator-main">
       <h2>CVSS v3.x グラフィカル計算機</h2>
-      <p class="subtitle">項目をクリックするか、ベクトル文字列を入力して「適用」を押してください。</p>
+      <p class="subtitle">項目をクリックするか、よくあるパターン（プリセット）を選んで素早く評価できます。</p>
 
       <!-- バージョン切り替え ＆ ベクトル直接入力 -->
       <div class="vector-bar">
@@ -133,6 +144,34 @@ const tabs = computed(() => [
         <div class="score-number">{{ score.toFixed(1) }}</div>
         <div class="score-badge">{{ SEVERITY_JA[severity] }} ({{ severity }})</div>
         <div class="score-summary">{{ summaryText }}</div>
+      </div>
+
+      <!-- ★ご提案の空間：初心者向けお助けプリセット群 -->
+      <div class="preset-section">
+        <span class="preset-title">💡 よくあるパターンの例（クリックで反映）:</span>
+        <div class="preset-buttons">
+          <button 
+            type="button" 
+            class="preset-btn"
+            @click="applyPreset('CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H')"
+          >
+            🌐 ネットから認証なし (重度 RCE等)
+          </button>
+          <button 
+            type="button" 
+            class="preset-btn"
+            @click="applyPreset('CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N')"
+          >
+            🖱️ ユーザ操作が必要 (XSS / フィッシング)
+          </button>
+          <button 
+            type="button" 
+            class="preset-btn"
+            @click="applyPreset('CVSS:3.1/AV:L/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H')"
+          >
+            💻 ローカル・管理者権限必須
+          </button>
+        </div>
       </div>
 
       <!-- メトリック選択カード群 -->
@@ -237,6 +276,43 @@ const tabs = computed(() => [
   color: var(--sub, #ccc);
   max-width: 600px;
 }
+
+/* プリセット部分のスタイル */
+.preset-section {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed var(--line, #444);
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.preset-title {
+  font-size: 0.85rem;
+  color: var(--sub, #aaa);
+  font-weight: bold;
+}
+.preset-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.preset-btn {
+  background: var(--panel, #252525);
+  border: 1px solid var(--line, #444);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  color: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.preset-btn:hover {
+  background: var(--accent, #3a75c4);
+  border-color: var(--accent, #3a75c4);
+  color: #fff;
+}
+
 .metrics-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
