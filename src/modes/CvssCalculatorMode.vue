@@ -60,7 +60,7 @@ const score = computed(() => cvssScore(version.value, metrics.value))
 const severity = computed(() => severityOf(score.value))
 
 // 日本語の解説文のサマリー
-const summaryText = computed(() => cvssSummary(metrics.value))
+const summaryText = computed(() => cvssSummary(currentVector.value))
 
 // OutputPanel に渡すタブデータの作成
 const tabs = computed(() => [
