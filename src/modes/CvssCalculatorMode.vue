@@ -5,7 +5,6 @@ import {
   cvssScore, 
   severityOf, 
   SEVERITY_JA, 
-  cvssSummary, 
   type CvssVersion, 
   type Metrics, 
   parseCvss,
@@ -98,52 +97,59 @@ const tabs = computed(() => [
 </script>
 
 <template>
-  <div class="cvss-calculator-mode">
-    <div class="calculator-main">
+  <div class="cols">
+    <!-- 左側：計算機メインパネル -->
+    <div class="panel calculator-main-panel">
       <h2>CVSS v3.x グラフィカル計算機</h2>
-      <p class="subtitle">項目をクリックするか、よくあるシナリオのプリセットを選んで素早く評価できます。</p>
+      <p class="hint">項目をクリックするか、よくあるシナリオのプリセットを選んで素早く評価できます。</p>
 
       <!-- バージョン切り替え ＆ ベクトル直接入力 -->
-      <div class="vector-bar">
-        <div class="version-switch">
-          <label>
+      <div class="bar" style="margin-top: 14px;">
+        <div class="version-switch" style="display: flex; gap: 12px; align-items: center;">
+          <label style="margin: 0; cursor: pointer;">
             <input 
               type="radio" 
               name="cvss-ver" 
               :checked="version === '3.1'" 
               @change="setVersion('3.1')" 
+              style="width: auto; margin-right: 4px;"
             /> CVSS v3.1
           </label>
-          <label>
+          <label style="margin: 0; cursor: pointer;">
             <input 
               type="radio" 
               name="cvss-ver" 
               :checked="version === '3.0'" 
               @change="setVersion('3.0')" 
+              style="width: auto; margin-right: 4px;"
             /> CVSS v3.0
           </label>
         </div>
-        <div class="vector-input-wrap">
+      </div>
+
+      <div class="row" style="margin-top: 8px;">
+        <div style="display: flex; gap: 8px; width: 100%; grid-column: span 2;">
           <input 
             type="text" 
             v-model="vectorInput" 
             placeholder="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" 
             @keyup.enter="applyVector"
+            style="font-family: monospace; flex: 1;"
           />
-          <button type="button" @click="applyVector">適用</button>
+          <button type="button" class="primary" @click="applyVector">適用</button>
         </div>
       </div>
-      <p v-if="parseError" class="error-msg">{{ parseError }}</p>
+      <p v-if="parseError" class="hint warn" style="margin-top: 4px;">{{ parseError }}</p>
 
-      <!-- グラフィカル・スコアタワー -->
+      <!-- グラフィカル・スコアタワー（共通パネルのデザインに統合） -->
       <div class="score-tower" :data-severity="severity">
         <div class="score-number">{{ score.toFixed(1) }}</div>
         <div class="score-badge">{{ SEVERITY_JA[severity] }} ({{ severity }})</div>
       </div>
 
-      <!-- 💡 リッチなお助けプリセット群（通常時の文字色を改善） -->
+      <!-- 💡 よくある脆弱性シナリオプリセット群 -->
       <div class="preset-section">
-        <span class="preset-title">💡 よくある脆弱性シナリオ（クリックで反映）:</span>
+        <label style="margin-top: 0;">💡 よくある脆弱性シナリオ（クリックで反映）:</label>
         <div class="preset-cards">
           
           <div class="preset-card" @click="applyPreset('CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H')">
@@ -169,215 +175,127 @@ const tabs = computed(() => [
         </div>
       </div>
 
-      <!-- メトリック選択カード群 -->
+      <!-- メトリック選択カード群（共通の fieldset / legend / opt を活用） -->
       <div class="metrics-grid">
-        <div v-for="def in METRICS" :key="def.code" class="metric-card">
-          <h3>{{ def.name }}</h3>
-          <p class="metric-desc">{{ def.desc }}</p>
-          <div class="options-group">
-            <button
+        <fieldset v-for="def in METRICS" :key="def.code">
+          <legend>{{ def.name }}</legend>
+          <p class="mdesc">{{ def.desc }}</p>
+          <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 6px;">
+            <label
               v-for="opt in def.options"
               :key="opt.code"
-              type="button"
-              :class="{ active: metrics[def.code] === opt.code }"
+              class="opt"
+              :class="{ 'active-opt': metrics[def.code] === opt.code }"
               @click="selectOption(def.code, opt.code)"
+              style="cursor: pointer; padding: 4px 6px; border-radius: 4px; margin: 2px 0;"
             >
-              <span class="opt-code">{{ opt.code }}</span>
-              <span class="opt-label">{{ opt.label }}</span>
-            </button>
+              <input
+                type="radio"
+                :name="def.code"
+                :value="opt.code"
+                :checked="metrics[def.code] === opt.code"
+                @change.stop="selectOption(def.code, opt.code)"
+              />
+              <span :class="{ on: metrics[def.code] === opt.code }" style="font-family: monospace;">[{{ opt.code }}] {{ opt.label }}</span>
+              <span class="od" style="color: var(--sub); font-size: 0.8rem;">{{ opt.desc }}</span>
+            </label>
           </div>
-        </div>
+        </fieldset>
       </div>
     </div>
 
-    <!-- 右側：出力パネル（共用） -->
-    <div class="calculator-output">
+    <!-- 右側：出力パネル（共通クラス適用） -->
+    <div class="panel out">
       <OutputPanel :tabs="tabs" base-name="cvss-assessment" />
     </div>
   </div>
 </template>
 
 <style scoped>
-.cvss-calculator-mode {
-  display: grid;
-  grid-template-columns: 1fr 400px;
-  gap: 24px;
-  align-items: start;
-}
-@media (max-width: 1024px) {
-  .cvss-calculator-mode {
-    grid-template-columns: 1fr;
-  }
-}
-.calculator-main {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-.vector-bar {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-.vector-input-wrap {
-  display: flex;
-  gap: 8px;
-  flex: 1;
-  min-width: 300px;
-}
-.vector-input-wrap input {
-  flex: 1;
-  padding: 8px 12px;
-  font-family: monospace;
-  font-size: 0.9rem;
-}
-.error-msg {
-  color: var(--warn, #ff6b6b);
-  font-size: 0.85rem;
-  margin: 0;
-}
+/* スコアタワーの共通変数・クラス準拠スタイル */
 .score-tower {
-  padding: 20px;
-  border-radius: 8px;
-  background: var(--panel, #1e1e1e);
-  border: 1px solid var(--line, #333);
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 6px;
+  background: var(--bg);
+  border: 1px solid var(--line);
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 .score-number {
-  font-size: 3rem;
+  font-size: 2.5rem;
   font-weight: bold;
   line-height: 1;
+  color: var(--ink);
 }
 .score-badge {
-  padding: 4px 12px;
+  padding: 3px 10px;
   border-radius: 4px;
-  font-weight: bold;
-  font-size: 0.9rem;
-  background: #333;
+  font-weight: 600;
+  font-size: 0.85rem;
+  background: var(--line);
+  color: var(--ink);
 }
 .score-tower[data-severity="CRITICAL"] .score-badge { background: #8B0000; color: #fff; }
 .score-tower[data-severity="HIGH"] .score-badge { background: #D2691E; color: #fff; }
-.score-tower[data-severity="MEDIUM"] .score-badge { background: #DAA520; color: #000; }
+.score-tower[data-severity="MEDIUM"] .score-badge { background: #DAA520; color: #1c2733; }
 .score-tower[data-severity="LOW"] .score-badge { background: #2E8B57; color: #fff; }
-.score-tower[data-severity="NONE"] .score-badge { background: #555; color: #fff; }
+.score-tower[data-severity="NONE"] .score-badge { background: var(--sub); color: #fff; }
 
-/* プリセットカードのスタイル */
+/* プリセットセクション＆カード */
 .preset-section {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--line, #333);
-  border-radius: 8px;
-  padding: 14px;
+  margin-top: 14px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-.preset-title {
-  font-size: 0.85rem;
-  color: var(--sub, #bbb);
-  font-weight: bold;
+  gap: 8px;
 }
 .preset-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
 }
 .preset-card {
-  background: var(--panel, #252525);
-  border: 1px solid var(--line, #444);
+  background: var(--panel);
+  border: 1px solid var(--line);
   border-radius: 6px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  color: #222; /* 通常時はダークな背景に映えるしっかりした濃色・黒字系、あるいはクリアな明色 */
-}
-.preset-card {
-  background: #f5f7fa; /* 明るめの背景にして、黒文字がくっきり映えるように調整 */
-  border: 1px solid #d1d5db;
-  color: #111827; /* はっきりとした黒文字 */
+  gap: 3px;
 }
 .preset-card:hover {
-  background: #e5e7eb;
-  border-color: var(--accent, #3a75c4);
-  transform: translateY(-1px);
+  border-color: var(--accent);
+  background: rgba(76, 184, 203, 0.08);
 }
 .preset-header {
   font-size: 0.85rem;
-  font-weight: bold;
-  color: #111827; /* 通常時からくっきりした黒文字 */
+  font-weight: 600;
+  color: var(--ink);
 }
 .preset-desc {
   font-size: 0.75rem;
-  color: #4b5563; /* 読みやすい少し濃い目のグレー */
+  color: var(--sub);
   line-height: 1.3;
 }
 
+/* メトリック選択グリッド */
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
 }
-.metric-card {
-  background: var(--panel, #1e1e1e);
-  border: 1px solid var(--line, #333);
-  border-radius: 8px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.metric-card h3 {
-  margin: 0;
-  font-size: 1rem;
-}
-.metric-desc {
-  margin: 0;
-  font-size: 0.8rem;
-  color: var(--sub, #aaa);
-}
-.options-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 8px;
-}
-.options-group button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  background: transparent;
-  border: 1px solid var(--line, #444);
-  border-radius: 4px;
-  color: inherit;
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.2s;
-}
-.options-group button:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-.options-group button.active {
-  background: var(--accent, #3a75c4);
-  border-color: var(--accent, #3a75c4);
-  color: var(--accent-ink, #fff);
-  font-weight: bold;
-}
-.opt-code {
-  font-family: monospace;
-  background: rgba(0, 0, 0, 0.3);
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-size: 0.85rem;
-}
-.opt-label {
-  font-size: 0.85rem;
+.opt.active-opt {
+  background: rgba(76, 184, 203, 0.12);
+  border: 1px solid var(--accent);
 }
 </style>
