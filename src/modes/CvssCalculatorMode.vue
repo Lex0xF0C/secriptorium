@@ -59,7 +59,7 @@ const applyVector = () => {
   }
 }
 
-// 【新規】お助けプリセットを適用する関数
+// プリセットを適用する関数
 const applyPreset = (presetVector: string, presetVer: CvssVersion = '3.1') => {
   version.value = presetVer
   vectorInput.value = presetVector
@@ -74,10 +74,7 @@ const applyPreset = (presetVector: string, presetVer: CvssVersion = '3.1') => {
 const score = computed(() => cvssScore(version.value, metrics.value))
 const severity = computed(() => severityOf(score.value))
 
-// 日本語の解説文
-const summaryText = computed(() => cvssSummary(currentVector.value))
-
-// OutputPanel に渡すタブデータの作成
+// OutputPanel に渡すタブデータの作成（冗長な概要項目を省きスッキリした形式）
 const tabs = computed(() => [
   {
     key: 'markdown',
@@ -104,7 +101,7 @@ const tabs = computed(() => [
   <div class="cvss-calculator-mode">
     <div class="calculator-main">
       <h2>CVSS v3.x グラフィカル計算機</h2>
-      <p class="subtitle">項目をクリックするか、よくあるパターン（プリセット）を選んで素早く評価できます。</p>
+      <p class="subtitle">項目をクリックするか、よくあるシナリオのプリセットを選んで素早く評価できます。</p>
 
       <!-- バージョン切り替え ＆ ベクトル直接入力 -->
       <div class="vector-bar">
@@ -142,34 +139,33 @@ const tabs = computed(() => [
       <div class="score-tower" :data-severity="severity">
         <div class="score-number">{{ score.toFixed(1) }}</div>
         <div class="score-badge">{{ SEVERITY_JA[severity] }} ({{ severity }})</div>
-        <div class="score-summary">{{ summaryText }}</div>
       </div>
 
-      <!-- ★ご提案の空間：初心者向けお助けプリセット群 -->
+      <!-- 💡 リッチなお助けプリセット群（シナリオ解説付き） -->
       <div class="preset-section">
-        <span class="preset-title">💡 よくあるパターンの例（クリックで反映）:</span>
-        <div class="preset-buttons">
-          <button 
-            type="button" 
-            class="preset-btn"
-            @click="applyPreset('CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H')"
-          >
-            🌐 ネットから認証なし (重度 RCE等)
-          </button>
-          <button 
-            type="button" 
-            class="preset-btn"
-            @click="applyPreset('CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N')"
-          >
-            🖱️ ユーザ操作が必要 (XSS / フィッシング)
-          </button>
-          <button 
-            type="button" 
-            class="preset-btn"
-            @click="applyPreset('CVSS:3.1/AV:L/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H')"
-          >
-            💻 ローカル・管理者権限必須
-          </button>
+        <span class="preset-title">💡 よくある脆弱性シナリオ（クリックで反映）:</span>
+        <div class="preset-cards">
+          
+          <div class="preset-card" @click="applyPreset('CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H')">
+            <div class="preset-header">🌐 ネットから認証なし (RCE等)</div>
+            <div class="preset-desc">インターネット公開Webアプリ等で、未認証の攻撃者が遠隔からシステムを完全に掌握する最悪のケース。</div>
+          </div>
+
+          <div class="preset-card" @click="applyPreset('CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N')">
+            <div class="preset-header">🖱️ ユーザ操作が必要 (XSS / フィッシング)</div>
+            <div class="preset-desc">被害者にリンク踏み等の操作をさせることで、別ドメインへ影響（スコープ変更）を及ぼすパターン。</div>
+          </div>
+
+          <div class="preset-card" @click="applyPreset('CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H')">
+            <div class="preset-header">🛡️ 内部ネットワーク限定サービス</div>
+            <div class="preset-desc">外部からは直接アクセスできず、同一社内LANや無線LANセグメントからの接続が前提となる脆弱性。</div>
+          </div>
+
+          <div class="preset-card" @click="applyPreset('CVSS:3.1/AV:L/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H')">
+            <div class="preset-header">💻 ローカル・管理者権限必須</div>
+            <div class="preset-desc">既に端末へアクセスしている状態から、さらにシステム管理者権限（root/SYSTEM）を奪うパターン。</div>
+          </div>
+
         </div>
       </div>
 
@@ -270,46 +266,51 @@ const tabs = computed(() => [
 .score-tower[data-severity="LOW"] .score-badge { background: #2E8B57; color: #fff; }
 .score-tower[data-severity="NONE"] .score-badge { background: #555; color: #fff; }
 
-.score-summary {
-  font-size: 0.95rem;
-  color: var(--sub, #ccc);
-  max-width: 600px;
-}
-
-/* プリセット部分のスタイル */
+/* リッチなプリセットカードのスタイル */
 .preset-section {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px dashed var(--line, #444);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--line, #333);
   border-radius: 8px;
-  padding: 12px 16px;
+  padding: 14px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 .preset-title {
   font-size: 0.85rem;
   color: var(--sub, #aaa);
   font-weight: bold;
 }
-.preset-buttons {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+.preset-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
 }
-.preset-btn {
+.preset-card {
   background: var(--panel, #252525);
   border: 1px solid var(--line, #444);
-  border-radius: 4px;
-  padding: 6px 10px;
-  font-size: 0.8rem;
-  color: inherit;
+  border-radius: 6px;
+  padding: 10px 12px;
   cursor: pointer;
   transition: all 0.2s;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
-.preset-btn:hover {
-  background: var(--accent, #3a75c4);
+.preset-card:hover {
+  background: rgba(58, 117, 196, 0.15);
   border-color: var(--accent, #3a75c4);
+  transform: translateY(-1px);
+}
+.preset-header {
+  font-size: 0.85rem;
+  font-weight: bold;
   color: #fff;
+}
+.preset-desc {
+  font-size: 0.75rem;
+  color: var(--sub, #aaa);
+  line-height: 1.3;
 }
 
 .metrics-grid {
