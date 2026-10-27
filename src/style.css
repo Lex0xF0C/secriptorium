@@ -72,3 +72,27 @@ summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; }
   .opt { grid-template-columns: 1.4em 1fr; }
   .opt .od { grid-column: 2; }
 }
+
+/* ---- SBOM / VEX モード ---- */
+.s3 { min-height: 3em; }
+.intro { margin: 0 0 12px; }
+.intro p { margin: 6px 0; font-size: 0.88rem; }
+.demo {
+  border: 1px dashed var(--accent); border-radius: 6px; padding: 6px 10px; margin: 0 0 10px;
+  font-size: 0.85rem; color: var(--sub);
+}
+.demo button { margin-left: 6px; padding: 2px 8px; font-size: 0.8rem; }
+.notes { margin: 6px 0 10px; padding-left: 1.2em; font-size: 0.85rem; color: var(--sub); }
+.comp, .stmt { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; }
+.comp .r1 { display: grid; grid-template-columns: 1.6fr 1fr auto; gap: 8px; margin-bottom: 6px; }
+.comp .r2 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.stmt .r1 { display: grid; grid-template-columns: 1fr 1.4fr auto; gap: 8px; margin-bottom: 6px; }
+.stmt .r2 { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; margin-bottom: 6px; }
+.mini { margin: 0; font-size: 0.78rem; font-weight: 400; color: var(--sub); }
+.mini input, .mini select, .mini textarea { margin-top: 2px; color: var(--ink); }
+@media (max-width: 560px) {
+  .comp .r1, .comp .r2, .stmt .r1, .stmt .r2 { grid-template-columns: 1fr; }
+}
+.check-list { list-style: none; margin: 0; padding: 0; font-size: 0.88rem; }
+.check-list li.ng { color: var(--warn); }
+button:disabled { opacity: 0.55; cursor: not-allowed; }

@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { ref, shallowRef } from 'vue'
 import AdvisoryMode from './modes/AdvisoryMode.vue'
-// 将来追加されるモード
-// import SbomMode from './modes/SbomMode.vue'
-// import VexMode from './modes/VexMode.vue'
+import SbomMode from './modes/SbomMode.vue'
 import CvssCalculatorMode from './modes/CvssCalculatorMode.vue'
 
-type ModeKey = 'advisory' | 'sbom' | 'vex' | 'cvss'
+type ModeKey = 'advisory' | 'SBOM' | 'cvss'
 
 interface ModeItem {
   key: ModeKey
@@ -20,8 +18,7 @@ const currentComponent = shallowRef(AdvisoryMode)
 
 const modes: ModeItem[] = [
   { key: 'advisory', label: '脆弱性アドバイザリ', component: AdvisoryMode, enabled: true },
-  { key: 'sbom', label: 'SBOM (CycloneDX)', component: null, enabled: false }, // 未実装時は無効
-  { key: 'vex', label: 'VEX', component: null, enabled: false }, // 未実装時は無効
+  { key: 'sbom', label: 'SBOM / VEX', component: SbomMode, enabled: true },
   { key: 'cvss', label: 'CVSS v3.x 計算機', component: CvssCalculatorMode, enabled: true },
 ]
 
@@ -35,7 +32,7 @@ const switchMode = (mode: ModeItem) => {
 <template>
   <!-- style.css の .top クラスが適用される共通ヘッダとモード切り替えタブ -->
   <header class="top">
-    <h1>secriptorium 脆弱性情報・SBOM・CVSSツール</h1>
+    <h1>Secriptorium 脆弱性アドバイザリ・SBOM・CVSSツール</h1>
     <p>入力した内容はこのブラウザの中だけで処理され、外部には送信されません。</p>
 
     <div class="modes" role="tablist">
@@ -55,7 +52,10 @@ const switchMode = (mode: ModeItem) => {
   </header>
 
   <!-- 選択されたモードのコンポーネントを表示 -->
+  <!-- KeepAlive: タブを切り替えても、入力内容が消えないようにする -->
   <main>
-    <component :is="currentComponent" />
+    <KeepAlive>
+      <component :is="currentComponent" />
+    </KeepAlive>
   </main>
 </template>

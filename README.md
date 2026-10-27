@@ -8,7 +8,7 @@
 
 ## 日本語
 
-脆弱性情報の公表・提出を支援する、ブラウザだけで動く小さなツールです。現在は **アドバイザリ作成** に対応しており、Markdown と CSAF 2.0（JSON）を生成します。今後、SBOM / VEX（CycloneDX）の作成支援を加える予定です。
+脆弱性情報の公表・提出を支援する、ブラウザだけで動く小さなツールです。**アドバイザリ作成**（Markdown と CSAF 2.0）と、**SBOM / VEX の作成支援**（CycloneDX JSON）に対応しています。
 
 入力内容はこのブラウザの中だけで処理され、外部へ送信されません。サーバーもデータベースもありません。
 
@@ -19,10 +19,11 @@
 - Markdown 出力（自社サイトへの掲載用）
 - CSAF 2.0（JSON）出力（機械可読な形式）。足りない項目は画面に表示
 - コピー、およびファイルへの保存
+- SBOM / VEX の作成支援：Excel からの貼り付け、PURL の自動生成、CycloneDX 1.6 の JSON を SBOM と VEX の別の文書で出力、1クリックのデモ、入力チェック
 
 ### 今後の予定
 
-- SBOM / VEX の入門・作成支援（CycloneDX 形式のエクスポートを想定）
+- SBOM / VEX の拡充（ライセンス、ハッシュ、依存関係、取引先向けの説明文書など）
 - 日英の表示切り替え、定型文、公開前チェックなど（別リポジトリ [lite-advisory-maker](https://github.com/Lex0xF0C/lite-advisory-maker) の機能の移植）
 
 ### 出力についての注意
@@ -41,6 +42,18 @@
 - バージョン範囲（例：「1.5.4以前」）は、文字列のまま製品バージョンの名前として入ります。機械可読な範囲表現には、まだ対応していません。
 - 日付は UTC の 0 時として出力します。
 - 関連情報のうち、URL でない行は CSAF に含まれません（Markdown には含まれます）。
+
+**SBOM / VEX（CycloneDX）**
+
+- 出力は CycloneDX 1.6 の JSON です。規格に完全に適合しているかどうかは、**公式の検証ツールで必ず確認してください。**
+- SBOM と VEX は、別々の文書です。VEX は、bom-link（`urn:cdx:<SBOMのシリアル番号>/1#<bom-ref>`）で、SBOM の部品を指します。
+- PURL は、エコシステムと名前から自動生成します。パッケージ管理の部品以外は `generic` です。誤った識別子を出さないため、エコシステムを推測しません。maven は「groupId:artifactId」の形で入力します。
+- バージョンなどの値を、補って埋めることはしません。空欄は空欄のまま出力され、チェックで知らせます。
+- 依存関係は、製品から各部品への1段だけです。ライセンスとハッシュには、まだ対応していません。
+- 貼り付けは、1回あたり20万文字・2000行までです（超えた分は読み取りません）。
+- 部品の表は、Excel 用の TSV としてコピーでき、次回、そのまま貼り戻せます（JSON の読み込みは設けていません）。
+- 「影響なし」などの VEX の判定は、製品の提供者が、自分の責任で行うものです。本ツールは、判定の正しさを確認しません。
+- デモは架空の機器の例です。CVE の内容は例示であり、使う前に NVD などで確認してください。デモ由来の出力には、サンプルである旨の印が付きます。
 
 **共通**
 
@@ -70,10 +83,12 @@ Vite + Vue 3 + TypeScript で作られています。ビルドと GitHub Pages �
 | `src/main.ts` | アプリの起動 |
 | `src/App.vue` | 全体の枠組みとモードの切り替え |
 | `src/modes/AdvisoryMode.vue` | アドバイザリ作成モードの画面 |
+| `src/modes/SbomMode.vue` | SBOM / VEX 作成モードの画面 |
 | `src/components/OutputPanel.vue` | 出力パネル（タブ、コピー、保存）。モード間で共用 |
 | `src/components/CvssPicker.vue` | CVSS の項目選択（説明つき）とスコア計算の画面部品 |
 | `src/lib/cvss.ts` | CVSS v3.0 / v3.1 の計算と、項目の定義・説明文（Vue に依存しない） |
 | `src/lib/advisory.ts` | フォームの型、Markdown と CSAF の生成（Vue に依存しない） |
+| `src/lib/sbom.ts` | SBOM / VEX の型、貼り付けの解析、PURL、CycloneDX の生成、チェック、デモ（Vue に依存しない） |
 | `src/lib/output.ts` | 出力パネルに渡すデータの型 |
 | `src/style.css` | 見た目（ダークモード対応） |
 
@@ -90,7 +105,7 @@ Vite + Vue 3 + TypeScript で作られています。ビルドと GitHub Pages �
 
 ## English
 
-A small browser-only tool that helps you publish and submit vulnerability information. It currently supports **advisory writing** and generates Markdown and CSAF 2.0 (JSON). SBOM / VEX support (CycloneDX) is planned.
+A small browser-only tool that helps you publish and submit vulnerability information. It supports **advisory writing** (Markdown and CSAF 2.0) and **SBOM / VEX authoring** (CycloneDX JSON).
 
 Everything you enter is processed in your browser and is never sent anywhere. There is no server and no database.
 
@@ -101,10 +116,11 @@ Everything you enter is processed in your browser and is never sent anywhere. Th
 - Markdown output (for your website)
 - CSAF 2.0 (JSON) output (machine-readable); missing items are shown on screen
 - Copy and save to file
+- SBOM / VEX authoring: paste from Excel, automatic PURL generation, CycloneDX 1.6 JSON output with SBOM and VEX as separate documents, one-click demo, input checks
 
 ### Planned
 
-- Introductory SBOM / VEX authoring support (CycloneDX export)
+- More SBOM / VEX features (licenses, hashes, dependency graph, customer-facing explanation document, etc.)
 - Japanese/English UI, presets and pre-publication checks (porting features from [lite-advisory-maker](https://github.com/Lex0xF0C/lite-advisory-maker))
 
 ### Notes on output
@@ -123,6 +139,18 @@ Everything you enter is processed in your browser and is never sent anywhere. Th
 - Version ranges (e.g. "up to 1.5.4") are stored as plain strings in the product version name. Machine-readable ranges are not supported yet.
 - Dates are output as 00:00 UTC.
 - Reference lines that are not URLs are not included in the CSAF output (they are in the Markdown).
+
+**SBOM / VEX (CycloneDX)**
+
+- The output is CycloneDX 1.6 JSON. **Always validate it with an official validator**; conformance is not guaranteed.
+- SBOM and VEX are separate documents. The VEX points to SBOM components with a bom-link (`urn:cdx:<SBOM serial number>/1#<bom-ref>`).
+- PURLs are generated from the ecosystem and the name. Anything not from a package manager is `generic`. The tool never guesses the ecosystem, to avoid emitting wrong identifiers. Enter Maven components as "groupId:artifactId".
+- Missing values (such as a version) are never filled in; they stay empty and are flagged by the checks.
+- Dependencies are recorded one level only (product to each component). Licenses and hashes are not supported yet.
+- Pasted text is limited to 200,000 characters and 2,000 rows per paste (the rest is ignored).
+- The component table can be copied as TSV for Excel and pasted back next time (there is no JSON import).
+- VEX judgements such as "not affected" are made by the product supplier, at their own responsibility. The tool does not verify them.
+- The demo is a fictional device. CVE details are examples; check them against NVD or similar before use. Output derived from the demo carries a sample marker.
 
 **General**
 
@@ -152,10 +180,12 @@ The `base` path in `vite.config.ts` is derived from the repository name, so rena
 | `src/main.ts` | App bootstrap |
 | `src/App.vue` | App shell and mode switching |
 | `src/modes/AdvisoryMode.vue` | Advisory mode screen |
+| `src/modes/SbomMode.vue` | SBOM / VEX mode screen |
 | `src/components/OutputPanel.vue` | Output panel (tabs, copy, save), shared across modes |
 | `src/components/CvssPicker.vue` | CVSS metric picker (with explanations) and score calculation UI |
 | `src/lib/cvss.ts` | CVSS v3.0 / v3.1 calculation and metric definitions/explanations (no Vue dependency) |
 | `src/lib/advisory.ts` | Form types, Markdown and CSAF generation (no Vue dependency) |
+| `src/lib/sbom.ts` | SBOM / VEX types, paste parsing, PURL, CycloneDX generation, checks, demo (no Vue dependency) |
 | `src/lib/output.ts` | Data type passed to the output panel |
 | `src/style.css` | Styling (dark mode supported) |
 
