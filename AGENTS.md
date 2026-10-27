@@ -1,6 +1,6 @@
 # AGENTS.md - AI Development Guidelines
 
-This repository hosts **Secriptorium**, a browser-based, client-side tool that helps people publish and submit vulnerability information. Current mode: security advisory authoring (Markdown + CSAF 2.0). Planned mode: SBOM / VEX (CycloneDX).
+This repository hosts **Secriptorium**, a browser-based, client-side tool that helps people publish and submit vulnerability information. Modes: security advisory authoring (Markdown + CSAF 2.0) and SBOM / VEX authoring (CycloneDX JSON).
 
 AI agents modifying this repository **MUST** follow the rules below.
 
@@ -29,9 +29,9 @@ AI agents modifying this repository **MUST** follow the rules below.
 ## 4. Structure
 
 - `src/main.ts` – bootstrap. `src/App.vue` – shell and mode switching.
-- `src/modes/` – one screen per mode (`AdvisoryMode.vue`; future `SbomMode.vue`, `VexMode.vue`).
+- `src/modes/` – one screen per mode (`AdvisoryMode.vue`, `SbomMode.vue`).
 - `src/components/OutputPanel.vue` – shared output panel. Modes pass `OutputTab[]` (`src/lib/output.ts`); do not duplicate copy/save logic.
-- `src/lib/` – pure TypeScript logic with **no Vue imports** (`cvss.ts`: CVSS calculation and metric texts; `advisory.ts`: form types and Markdown/CSAF generation; `output.ts`: output tab type). Keep it testable in isolation.
+- `src/lib/` – pure TypeScript logic with **no Vue imports** (`cvss.ts`: CVSS calculation and metric texts; `advisory.ts`: form types and Markdown/CSAF generation; `sbom.ts`: SBOM/VEX types, paste parsing, PURL, CycloneDX generation, checks, demo data; `output.ts`: output tab type). Keep it testable in isolation.
 - `src/components/CvssPicker.vue` – metric picker bound to a vector string via `v-model`.
 - `src/style.css` – global styles with CSS variables and light/dark support.
 - `vite.config.ts` derives `base` from `GITHUB_REPOSITORY`; do not hard-code the repository name.
@@ -44,11 +44,15 @@ AI agents modifying this repository **MUST** follow the rules below.
 - **CVSS:** `src/lib/cvss.ts` computes the v3.0 / v3.1 base score from the vector (only the rounding function differs between the two). Do not alter the formulas without explicit instruction. After any change, verify known vectors for both versions (`AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H` = 9.8; `S:C` with all High = 10.0; all `N` impacts = 0). CVSS 4.0 is intentionally unsupported until CSAF supports it; if added, vendor the official calculator logic (BSD-2-Clause) with its notice in `THIRD_PARTY_NOTICES.md`, and show attribution (CVSS is owned by FIRST and used by permission).
 - **CSAF 2.0:** output is best-effort. `scores[].cvss_v3` is emitted only for v3.0/v3.1 vectors (with the matching `version`); a CVSS 4.0 vector is never put into CSAF 2.0. Required-but-missing items are surfaced via `csafWarnings()`. Never claim full conformance; the README tells users to validate with an official validator.
 
-## 6. Roadmap Notes (SBOM / VEX)
+## 6. SBOM / VEX Rules
 
-- Target format: **CycloneDX (JSON)** for SBOM, with VEX statements (e.g. `not_affected` with a justification). Keep the generator in `src/lib/` (e.g. `sbom.ts`) and the screen in `src/modes/`.
-- Beginner-friendly features under consideration: one-click demo data, pasting components from a spreadsheet (tab-separated text) into a table, and download of the generated JSON.
-- Any pasted-text parsing must be treated as untrusted input: parse as plain text, never as HTML, and cap sizes.
+- Format: **CycloneDX JSON** (currently spec 1.6, `CDX_SPEC_VERSION` in `sbom.ts`). SBOM and VEX are **separate documents**; the VEX references SBOM components by bom-link (`urn:cdx:<serial>/1#<bom-ref>`). Both serial numbers and the timestamp live in `SbomForm`, so the same input always yields the same output. Never generate them inside the builders.
+- **Never fabricate data.** Do not default a missing version, supplier or ecosystem (empty stays empty; `generic` is the neutral ecosystem). Surface gaps through `sbomChecks()`.
+- VEX statements are a separate table from components: one statement = CVE × component × state (+ justification for `not_affected`). Internal state names are `not_affected | affected | under_investigation | fixed`; they are mapped to CycloneDX values only in `buildVex()` (`exploitable`, `in_triage`, `resolved`).
+- Pasted text (TSV/CSV) is **untrusted input**: parse as plain text only, never as HTML; keep the limits in `LIMITS` (characters, rows, field length, statements).
+- No JSON import. Persistence across sessions is by TSV export/paste of the component table only.
+- Demo data is fictional and must stay marked as sample (`isDemo` adds a note property to the output). CVE details in the demo are examples; verify them against NVD before changing or relying on them.
+- Planned: licenses, hashes, dependency graph, a customer-facing explanation document, possibly a CSAF VEX output (reusing the CSAF code).
 
 ## 7. Instructions for AI Code Modifications
 
