@@ -197,7 +197,7 @@ const tabs = computed<OutputTab[]>(() => [
       <p class="hint">{{ L.vex.intro }}</p>
 
       <form @submit.prevent class="form-container">
-        <!-- 対象CVE番号 -->
+        <!-- 対象CVE番号 & 文書管理番号 -->
         <div class="row">
           <div>
             <label>{{ L?.vex?.cveLabel }}</label>
@@ -209,7 +209,7 @@ const tabs = computed<OutputTab[]>(() => [
           </div>
         </div>
         
-        <!-- 公開日 & 発行者名 -->
+        <!-- 公開日 & 発行者名 & 発行者URL（Namespace） -->
         <div class="row">
           <div>
             <label>{{ L?.vex?.pubDateLabel }}</label>
@@ -220,6 +220,15 @@ const tabs = computed<OutputTab[]>(() => [
             <input type="text" v-model="publisherName" :placeholder="L?.vex?.pubNamePh" />
           </div>
         </div>
+        
+        <!-- 発行者URL（Namespace） -->
+        <div class="row">
+          <div>
+            <label>{{ L?.vex?.pubNsLabel }}</label>
+            <input type="url" v-model="publisherNamespace" :placeholder="L?.vex?.pubNsPh" />
+          </div>
+        </div>
+
 
         <!-- 製品影響判定マトリクスエリア -->
         <div class="products-section">
