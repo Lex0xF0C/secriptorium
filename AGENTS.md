@@ -1,6 +1,6 @@
 # AGENTS.md - AI Development Guidelines
 
-This repository hosts **Secriptorium**, a browser-based, client-side tool that helps people publish and submit vulnerability information. Modes: security advisory authoring (Markdown + CSAF 2.0) and SBOM / VEX authoring (CycloneDX JSON).
+This repository hosts **Secriptorium**, a browser-based, client-side tool that helps people publish and submit vulnerability information. Modes: security advisory authoring (Markdown), a CVSS v3.x calculator, and SBOM / VEX authoring (CycloneDX JSON). CSAF 2.0 output for advisory mode is a **future improvement** (not implemented in the UI yet).
 
 AI agents modifying this repository **MUST** follow the rules below.
 
@@ -23,15 +23,15 @@ AI agents modifying this repository **MUST** follow the rules below.
 ## 3. Strict Security Rules
 
 1. **No `v-html` and no `innerHTML`/`outerHTML`/`insertAdjacentHTML`.** Render user-controlled text only via `{{ }}`, `textContent`, or DOM APIs.
-2. **Keep the CSP in `index.html` tight** (`default-src 'self'`, `script-src 'self'`, `style-src 'self'`, `connect-src 'none'`). No `eval`, `new Function`, inline `<script>`, inline event handlers, or inline `style` attributes bound with `setAttribute`. Prefer classes in `src/style.css`.
+2. **Keep the CSP in `index.html` tight** (`default-src 'self'`, `script-src 'self'`, `style-src 'self'`, `connect-src 'none'`). No `eval`, `new Function`, inline `<script>`, inline event handlers, or **any inline `style="…"` attribute in templates**. Use classes: global ones in `src/style.css`, component-specific ones in the component's `<style scoped>`.
 3. **No external resources:** no CDN scripts, fonts, images, or stylesheets.
 
 ## 4. Structure
 
 - `src/main.ts` – bootstrap. `src/App.vue` – shell and mode switching.
-- `src/modes/` – one screen per mode (`AdvisoryMode.vue`, `SbomMode.vue`).
+- `src/modes/` – one screen per mode (`AdvisoryMode.vue`, `CvssCalculatorMode.vue`, `SbomMode.vue`).
 - `src/components/OutputPanel.vue` – shared output panel. Modes pass `OutputTab[]` (`src/lib/output.ts`); do not duplicate copy/save logic.
-- `src/lib/` – pure TypeScript logic with **no Vue imports** (`cvss.ts`: CVSS calculation and metric texts; `advisory.ts`: form types and Markdown/CSAF generation; `sbom.ts`: SBOM/VEX types, paste parsing, PURL, CycloneDX generation, checks, demo data; `output.ts`: output tab type). Keep it testable in isolation.
+- `src/lib/` – pure TypeScript logic with **no Vue imports** (`cvss.ts`: CVSS calculation and metric texts; `advisory.ts`: form types and Markdown/CSAF generation (the CSAF code is kept for the planned CSAF output and is currently unused by the UI); `i18n-ja.ts`: Japanese texts, presets and CWE samples for advisory mode; `sbom.ts`: SBOM/VEX types, paste parsing, PURL, CycloneDX generation, checks, demo data; `output.ts`: output tab type). Keep it testable in isolation.
 - `src/components/CvssPicker.vue` – metric picker bound to a vector string via `v-model`.
 - `src/style.css` – global styles with CSS variables and light/dark support.
 - `vite.config.ts` derives `base` from `GITHUB_REPOSITORY`; do not hard-code the repository name.
@@ -42,7 +42,7 @@ AI agents modifying this repository **MUST** follow the rules below.
 - The title is single-line (`oneLine()`); table cells go through `esc()` (escapes `|`, line breaks to spaces).
 - The on-screen preview is plain text (`<pre>{{ }}</pre>`); never render generated Markdown/JSON as HTML.
 - **CVSS:** `src/lib/cvss.ts` computes the v3.0 / v3.1 base score from the vector (only the rounding function differs between the two). Do not alter the formulas without explicit instruction. After any change, verify known vectors for both versions (`AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H` = 9.8; `S:C` with all High = 10.0; all `N` impacts = 0). CVSS 4.0 is intentionally unsupported until CSAF supports it; if added, vendor the official calculator logic (BSD-2-Clause) with its notice in `THIRD_PARTY_NOTICES.md`, and show attribution (CVSS is owned by FIRST and used by permission).
-- **CSAF 2.0:** output is best-effort. `scores[].cvss_v3` is emitted only for v3.0/v3.1 vectors (with the matching `version`); a CVSS 4.0 vector is never put into CSAF 2.0. Required-but-missing items are surfaced via `csafWarnings()`. Never claim full conformance; the README tells users to validate with an official validator.
+- **CSAF 2.0 (future improvement):** the advisory-mode UI does not offer CSAF output yet. Adding it requires publisher name and namespace (URL) input fields. When added, the output is best-effort. `scores[].cvss_v3` is emitted only for v3.0/v3.1 vectors (with the matching `version`); a CVSS 4.0 vector is never put into CSAF 2.0. Required-but-missing items are surfaced via `csafWarnings()`. Never claim full conformance; the README tells users to validate with an official validator.
 
 ## 6. SBOM / VEX Rules
 
@@ -57,5 +57,6 @@ AI agents modifying this repository **MUST** follow the rules below.
 ## 7. Instructions for AI Code Modifications
 
 - Be surgical; preserve responsive layout (`@media (max-width: 860px)`) and dark mode.
-- Keep user-facing text in Japanese (the primary audience); an i18n layer may be added later.
+- Keep user-facing text in Japanese (the primary audience). Advisory mode takes its texts from `src/lib/i18n-ja.ts` (a `"text|hint"` string is shown as a label plus a hint); other modes currently have Japanese text inline. Moving them into a language file is a possible future step.
+- Component `tabs` passed to `OutputPanel` must be `OutputTab[]` (`id`, `label`, `content`, `ext`, `mime`); do not use other key names.
 - After UI changes, confirm there are no console errors and that the Actions build passes.

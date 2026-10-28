@@ -2,13 +2,14 @@
 import { ref, computed, watch } from 'vue'
 import { I18N_JA } from '../lib/i18n-ja'
 import OutputPanel from '../components/OutputPanel.vue'
+import type { OutputTab } from '../lib/output'
 import CvssPicker from '../components/CvssPicker.vue'
 import { cvssSummary } from '../lib/cvss'
 
 const L = I18N_JA
 
 // フォームの入力状態
-const status = ref('urgent')
+const status = ref('normal')
 const title = ref('')
 const aid = ref('')
 const cve = ref('')
@@ -18,6 +19,8 @@ const summary = ref('')
 const versioncheck = ref('')
 const cwe = ref('')
 const cwenote = ref('')
+const cweOther = ref('') // 候補にないCWEの直接入力
+const CWE_OTHER = '__other__' // 選択肢「候補にないCWE」を表す内部の値
 const desc = ref('')
 const impact = ref('')
 const score = ref('')
@@ -69,10 +72,16 @@ const calculatedSev = computed(() => {
 })
 
 // ベクター変更時にCvssPickerからスコアを自動連動させる
+// 手入力したスコアは上書き・削除しない（自動で入れたスコアだけが、ベクターを空にしたときに消える）
+const autoScore = ref('')
 watch(vector, (v) => {
-  const summary = cvssSummary(v)
-  if (summary) {
-    score.value = summary.score.toFixed(1)
+  const s = cvssSummary(v)
+  if (s) {
+    score.value = s.score.toFixed(1)
+    autoScore.value = score.value
+  } else if (score.value === autoScore.value) {
+    score.value = ''
+    autoScore.value = ''
   }
 })
 
@@ -172,20 +181,26 @@ const markdownOutput = computed(() => {
     if (versioncheck.value.trim()) Ls.push(U.oVerHow, '', versioncheck.value.trim(), '')
   }
 
-  if (desc.value.trim() || cwe.value.trim()) {
+  // 候補にないCWEを直接入力した場合は、その内容を使う（改行は空白にする）
+  const cweVal = cwe.value === CWE_OTHER ? cweOther.value.trim().replace(/\s*\n\s*/g, ' ') : cwe.value.trim()
+  if (desc.value.trim() || cweVal) {
     Ls.push(`## ${U.oDesc}`, '')
     if (desc.value.trim()) Ls.push(desc.value.trim(), '')
-    if (cwe.value.trim() === L.unk) {
+    if (cweVal === L.unk) {
       Ls.push(L.ui.fCweUnk.replace('{t}', cwenote.value.trim().replace(/\n/g, ' ')), '')
-    } else if (cwe.value.trim()) {
-      Ls.push(`- ${cwe.value.trim()}`, '')
+    } else if (cweVal) {
+      Ls.push(`- ${cweVal}`, '')
     }
   }
 
   if (impact.value.trim() || score.value.trim()) {
     Ls.push(`## ${U.oImp}`, '')
     if (impact.value.trim()) Ls.push(impact.value.trim(), '')
-    if (score.value.trim()) Ls.push(L.ui.fCvss.replace('{n}', score.value.trim()).replace('{s}', sevName))
+    if (score.value.trim()) {
+      // 表記のバージョンは、ベクターに合わせる（v3.0 のベクターなら v3.0）
+      const ver = cvssSummary(vector.value)?.version ?? '3.1'
+      Ls.push(L.ui.fCvss.replace('v3.1', 'v' + ver).replace('{n}', score.value.trim()).replace('{s}', sevName))
+    }
     if (vector.value.trim()) Ls.push(L.ui.fVec.replace('{v}', vector.value.trim()))
     Ls.push('')
   }
@@ -213,15 +228,16 @@ const markdownOutput = computed(() => {
   return Ls.join('\n').replace(/\n+$/, '\n')
 })
 
-const tabs = computed(() => [
+const tabs = computed<OutputTab[]>(() => [
   {
-    key: 'markdown',
+    id: 'markdown',
     label: 'Markdown',
     content: markdownOutput.value,
-    filename: 'vulnerability-advisory.md'
+    ext: '.md',
+    mime: 'text/markdown;charset=utf-8'
   },
   {
-    key: 'json',
+    id: 'json',
     label: 'JSON',
     content: JSON.stringify({
       status: status.value,
@@ -239,7 +255,8 @@ const tabs = computed(() => [
       fix: fix.value,
       work: work.value
     }, null, 2),
-    filename: 'vulnerability-advisory.json'
+    ext: '.json',
+    mime: 'application/json;charset=utf-8'
   }
 ])
 </script>
@@ -251,8 +268,8 @@ const tabs = computed(() => [
       <h2>{{ L.ui.h1 }}</h2>
       <p class="hint">{{ L.ui.intro }}</p>
 
-      <div v-if="toastMsg" class="bar" style="margin-top: 10px;">
-        <span class="status" style="color: var(--accent); font-weight: 600;">{{ toastMsg }}</span>
+      <div v-if="toastMsg" class="bar toast-bar">
+        <span class="status toast-text">{{ toastMsg }}</span>
       </div>
 
       <form @submit.prevent class="form-container">
@@ -347,16 +364,25 @@ const tabs = computed(() => [
 
         <!-- 脆弱性の種類（CWE選択連動） -->
         <div>
-          <label>{{ L.ui.cwel }}</label>
+          <label>{{ L.ui.cwel.split('|')[0] }}</label>
+          <p class="hint">{{ L.ui.cwel.split('|')[1] }}</p>
           <select v-model="cwe" @change="handleCweChange">
             <option value="">-- CWEを選択してください --</option>
+            <option :value="CWE_OTHER">{{ L.ui.cweo }}</option>
             <option :value="L.unk">{{ L.unk }}</option>
             <option v-for="c in L.cwes" :key="c" :value="c">{{ c }}</option>
           </select>
         </div>
 
+        <div v-if="cwe === CWE_OTHER">
+          <label>{{ L.ui.cweol.split('|')[0] }}</label>
+          <p class="hint">{{ L.ui.cweol.split('|')[1] }}</p>
+          <input type="text" v-model="cweOther" :placeholder="L.ui.cweoph" />
+        </div>
+
         <div v-if="cwe === L.unk">
-          <label>{{ L.ui.cwenl }}</label>
+          <label>{{ L.ui.cwenl.split('|')[0] }}</label>
+          <p class="hint">{{ L.ui.cwenl.split('|')[1] }}</p>
           <input type="text" v-model="cwenote" :placeholder="L.ui.cwenph" />
         </div>
 
@@ -506,6 +532,13 @@ const tabs = computed(() => [
 </template>
 
 <style scoped>
+.toast-bar {
+  margin-top: 10px;
+}
+.toast-text {
+  color: var(--accent);
+  font-weight: 600;
+}
 .form-container {
   display: flex;
   flex-direction: column;
