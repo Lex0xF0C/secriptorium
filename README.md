@@ -8,7 +8,7 @@
 
 ## 日本語
 
-脆弱性情報の公表・提出を支援する、ブラウザだけで動く小さなツールです。**アドバイザリ作成**（Markdown と CSAF 2.0）と、**SBOM / VEX の作成支援**（CycloneDX JSON）に対応しています。
+脆弱性情報の公表・提出を支援する、ブラウザだけで動く小さなツールです。**アドバイザリ作成**（Markdown）、**CVSS v3.x の計算**、**SBOM / VEX の作成支援**（CycloneDX JSON）に対応しています。CSAF 2.0 の出力は、将来の改善構想です。
 
 入力内容はこのブラウザの中だけで処理され、外部へ送信されません。サーバーもデータベースもありません。
 
@@ -17,12 +17,13 @@
 - アドバイザリの入力フォーム（タイトル、概要、影響を受ける製品、CWE、脅威、対策、回避策、連絡先など）
 - CVSS v3.0 / v3.1 の基本スコアと深刻度を自動計算（ベクターの貼り付け、または項目ごとの説明つき選択式）
 - Markdown 出力（自社サイトへの掲載用）
-- CSAF 2.0（JSON）出力（機械可読な形式）。足りない項目は画面に表示
+- CVSS v3.x のグラフィカルな計算機（シナリオ別のプリセットつき）
 - コピー、およびファイルへの保存
 - SBOM / VEX の作成支援：Excel からの貼り付け、PURL の自動生成、CycloneDX 1.6 の JSON を SBOM と VEX の別の文書で出力、1クリックのデモ、入力チェック
 
 ### 今後の予定
 
+- アドバイザリモードへの CSAF 2.0（JSON）出力の追加（発行者名・発行者のURLの入力欄も、あわせて追加する）
 - SBOM / VEX の拡充（ライセンス、ハッシュ、依存関係、取引先向けの説明文書など）
 - 日英の表示切り替え、定型文、公開前チェックなど（別リポジトリ [lite-advisory-maker](https://github.com/Lex0xF0C/lite-advisory-maker) の機能の移植）
 
@@ -35,13 +36,13 @@
 - タイトルは1行の項目です。改行は空白として扱われます。
 - HTML タグは入力のまま出力され、表示は掲載先の Markdown レンダラに依存します。本ツールの画面上では、HTML として解釈されません。
 
-**CSAF 2.0**
+**CVSS**
 
-- 規格上の必須項目が足りない場合は、画面に警告が出ます。ただし、出力が規格に完全に適合しているかどうかは、**公式の検証ツール（Secvisogram など）で必ず確認してください。**
-- CVSS 4.0 は、CSAF 2.0 が対応していないため、現在は使えません（CSAF 2.1 で対応予定のため、対応後に検討します）。
-- バージョン範囲（例：「1.5.4以前」）は、文字列のまま製品バージョンの名前として入ります。機械可読な範囲表現には、まだ対応していません。
-- 日付は UTC の 0 時として出力します。
-- 関連情報のうち、URL でない行は CSAF に含まれません（Markdown には含まれます）。
+- CVSS 4.0 は、現在は使えません。将来 CSAF 2.0 の出力を付ける場合、CSAF 2.0 が 4.0 に対応していないためです（CSAF 2.1 で対応予定のため、対応後に検討します）。
+
+**CSAF 2.0（将来の予定）**
+
+- CSAF 2.0 の出力は、現在、アドバイザリモードにありません。付ける場合は、出力が規格に完全に適合しているかどうかを、**公式の検証ツール（Secvisogram など）で必ず確認してください。**
 
 **SBOM / VEX（CycloneDX）**
 
@@ -83,11 +84,13 @@ Vite + Vue 3 + TypeScript で作られています。ビルドと GitHub Pages �
 | `src/main.ts` | アプリの起動 |
 | `src/App.vue` | 全体の枠組みとモードの切り替え |
 | `src/modes/AdvisoryMode.vue` | アドバイザリ作成モードの画面 |
+| `src/modes/CvssCalculatorMode.vue` | CVSS v3.x 計算機モードの画面 |
 | `src/modes/SbomMode.vue` | SBOM / VEX 作成モードの画面 |
 | `src/components/OutputPanel.vue` | 出力パネル（タブ、コピー、保存）。モード間で共用 |
 | `src/components/CvssPicker.vue` | CVSS の項目選択（説明つき）とスコア計算の画面部品 |
 | `src/lib/cvss.ts` | CVSS v3.0 / v3.1 の計算と、項目の定義・説明文（Vue に依存しない） |
-| `src/lib/advisory.ts` | フォームの型、Markdown と CSAF の生成（Vue に依存しない） |
+| `src/lib/advisory.ts` | フォームの型、Markdown と CSAF の生成（Vue に依存しない。CSAF の生成は、将来の出力用に残してある） |
+| `src/lib/i18n-ja.ts` | アドバイザリモードの日本語の文言、定型文、CWE の例文 |
 | `src/lib/sbom.ts` | SBOM / VEX の型、貼り付けの解析、PURL、CycloneDX の生成、チェック、デモ（Vue に依存しない） |
 | `src/lib/output.ts` | 出力パネルに渡すデータの型 |
 | `src/style.css` | 見た目（ダークモード対応） |
@@ -105,7 +108,7 @@ Vite + Vue 3 + TypeScript で作られています。ビルドと GitHub Pages �
 
 ## English
 
-A small browser-only tool that helps you publish and submit vulnerability information. It supports **advisory writing** (Markdown and CSAF 2.0) and **SBOM / VEX authoring** (CycloneDX JSON).
+A small browser-only tool that helps you publish and submit vulnerability information. It supports **advisory writing** (Markdown), **CVSS v3.x calculation** and **SBOM / VEX authoring** (CycloneDX JSON). CSAF 2.0 output is a planned improvement.
 
 Everything you enter is processed in your browser and is never sent anywhere. There is no server and no database.
 
@@ -114,12 +117,13 @@ Everything you enter is processed in your browser and is never sent anywhere. Th
 - Advisory form (title, overview, affected products, CWE, threat, countermeasure, workaround, contact, etc.)
 - Automatic CVSS v3.0 / v3.1 base score and severity (paste a vector, or pick each metric with explanations)
 - Markdown output (for your website)
-- CSAF 2.0 (JSON) output (machine-readable); missing items are shown on screen
+- Graphical CVSS v3.x calculator (with scenario presets)
 - Copy and save to file
 - SBOM / VEX authoring: paste from Excel, automatic PURL generation, CycloneDX 1.6 JSON output with SBOM and VEX as separate documents, one-click demo, input checks
 
 ### Planned
 
+- CSAF 2.0 (JSON) output in advisory mode (together with input fields for the publisher name and URL)
 - More SBOM / VEX features (licenses, hashes, dependency graph, customer-facing explanation document, etc.)
 - Japanese/English UI, presets and pre-publication checks (porting features from [lite-advisory-maker](https://github.com/Lex0xF0C/lite-advisory-maker))
 
@@ -132,13 +136,13 @@ Everything you enter is processed in your browser and is never sent anywhere. Th
 - The title is a single-line field; line breaks are converted to spaces.
 - HTML tags are output as typed; how they are displayed depends on the Markdown renderer of your publishing site. This tool's own screen does not interpret them as HTML.
 
-**CSAF 2.0**
+**CVSS**
 
-- If required items are missing, a warning is shown. However, **always validate the output with an official validator (e.g., Secvisogram)**; this tool does not guarantee full conformance.
-- CVSS 4.0 is not available because CSAF 2.0 does not support it (it is expected in CSAF 2.1; to be considered then).
-- Version ranges (e.g. "up to 1.5.4") are stored as plain strings in the product version name. Machine-readable ranges are not supported yet.
-- Dates are output as 00:00 UTC.
-- Reference lines that are not URLs are not included in the CSAF output (they are in the Markdown).
+- CVSS 4.0 is not available. If CSAF 2.0 output is added later, note that CSAF 2.0 does not support CVSS 4.0 (it is expected in CSAF 2.1; to be considered then).
+
+**CSAF 2.0 (planned)**
+
+- CSAF 2.0 output is not currently available in advisory mode. When it is added, **always validate the output with an official validator (e.g., Secvisogram)**.
 
 **SBOM / VEX (CycloneDX)**
 
@@ -180,11 +184,13 @@ The `base` path in `vite.config.ts` is derived from the repository name, so rena
 | `src/main.ts` | App bootstrap |
 | `src/App.vue` | App shell and mode switching |
 | `src/modes/AdvisoryMode.vue` | Advisory mode screen |
+| `src/modes/CvssCalculatorMode.vue` | CVSS v3.x calculator mode screen |
 | `src/modes/SbomMode.vue` | SBOM / VEX mode screen |
 | `src/components/OutputPanel.vue` | Output panel (tabs, copy, save), shared across modes |
 | `src/components/CvssPicker.vue` | CVSS metric picker (with explanations) and score calculation UI |
 | `src/lib/cvss.ts` | CVSS v3.0 / v3.1 calculation and metric definitions/explanations (no Vue dependency) |
-| `src/lib/advisory.ts` | Form types, Markdown and CSAF generation (no Vue dependency) |
+| `src/lib/advisory.ts` | Form types, Markdown and CSAF generation (no Vue dependency; the CSAF code is kept for the planned output) |
+| `src/lib/i18n-ja.ts` | Japanese UI text, presets and CWE sample text for advisory mode |
 | `src/lib/sbom.ts` | SBOM / VEX types, paste parsing, PURL, CycloneDX generation, checks, demo (no Vue dependency) |
 | `src/lib/output.ts` | Data type passed to the output panel |
 | `src/style.css` | Styling (dark mode supported) |
