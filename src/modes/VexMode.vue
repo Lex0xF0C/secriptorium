@@ -173,72 +173,40 @@ const tabs = computed<OutputTab[]>(() => [
 
 <template>
   <div class="cols">
-    <!-- 左側：入力フォーム -->
     <div class="panel advisory-form-panel">
-      <h2>製品ポートフォリオ VEX 作成</h2>
-      <p class="hint">特定CVEに対する自社製品群の影響調査ステータスを CSAF 2.0 VEX 形式で一括出力します。</p>
-
-      <div v-if="toastMsg" class="bar toast-bar">
-        <span class="status toast-text">{{ toastMsg }}</span>
-      </div>
+      <h2>{{ L.vex.title }}</h2>
+      <p class="hint">{{ L.vex.intro }}</p>
 
       <form @submit.prevent class="form-container">
         <!-- 対象CVE番号 -->
         <div>
-          <label>対象 CVE 番号（必須）</label>
-          <input type="text" v-model="cve" placeholder="例：CVE-2026-1234" />
+          <label>{{ L.vex.cveLabel }}</label>
+          <input type="text" v-model="cve" :placeholder="L.vex.cvePh" />
         </div>
 
-        <!-- CSAF 発行者情報 -->
+        <!-- 発行者情報 -->
         <div class="row">
           <div>
-            <label>発行者名（組織名・PSIRT名）</label>
-            <input type="text" v-model="publisherName" placeholder="例：株式会社サンプル PSIRT" />
+            <label>{{ L.vex.pubNameLabel }}</label>
+            <input type="text" v-model="publisherName" :placeholder="L.vex.pubNamePh" />
           </div>
           <div>
-            <label>発行者URL（Namespace）</label>
-            <input type="url" v-model="publisherNamespace" placeholder="https://example.co.jp" />
+            <label>{{ L.vex.pubNsLabel }}</label>
+            <input type="url" v-model="publisherNamespace" :placeholder="L.vex.pubNsPh" />
           </div>
-        </div>
-
-        <!-- 管理番号・公開日 -->
-        <div class="row">
-          <div>
-            <label>文書管理番号</label>
-            <input type="text" v-model="aid" placeholder="VEX-2026-001" />
-          </div>
-          <div>
-            <label>公開日</label>
-            <input type="date" v-model="pub" />
-          </div>
-        </div>
-
-        <!-- 全体概要 -->
-        <div>
-          <label>調査の全体概要</label>
-          <textarea v-model="summary" rows="2" placeholder="本脆弱性に対する自社製品群の影響調査結果です。"></textarea>
         </div>
 
         <!-- 製品影響判定マトリクスエリア -->
         <div class="products-section">
           <div class="section-header-bar">
-            <label class="section-title">製品別ステータス設定（全 {{ prods.length }} 件）</label>
+            <label class="section-title">{{ L.vex.prodSectionTitle }}（全 {{ prods.length }} 件）</label>
             
-            <!-- モード切り替えトグルボタン -->
             <div class="mode-toggle-btns" role="tablist">
-              <button
-                type="button"
-                :class="{ active: inputMode === 'form' }"
-                @click="inputMode = 'form'"
-              >
-                📝 フォーム入力 (1件ずつ)
+              <button type="button" :class="{ active: inputMode === 'form' }" @click="inputMode = 'form'">
+                {{ L.vex.modeForm }}
               </button>
-              <button
-                type="button"
-                :class="{ active: inputMode === 'paste' }"
-                @click="inputMode = 'paste'"
-              >
-                📋 Excelコピペ (TSV一括)
+              <button type="button" :class="{ active: inputMode === 'paste' }" @click="inputMode = 'paste'">
+                {{ L.vex.modePaste }}
               </button>
             </div>
           </div>
@@ -247,89 +215,84 @@ const tabs = computed<OutputTab[]>(() => [
           <div v-if="inputMode === 'form'" class="mode-content">
             <div class="action-bar">
               <button type="button" class="btn-sub" @click="handleCopyTsv">
-                📋 現在の表をExcel用にコピー
+                {{ L.vex.btnCopyTsv }}
               </button>
             </div>
 
             <div v-for="(p, index) in prods" :key="index" class="vex-product-card">
               <div class="row">
-                <input type="text" v-model="p.name" placeholder="製品名（例: Gateway Appliance）" />
-                <input type="text" v-model="p.version" placeholder="バージョン（例: v1.0〜v2.4）" />
+                <input type="text" v-model="p.name" placeholder="製品名" />
+                <input type="text" v-model="p.version" placeholder="バージョン" />
               </div>
 
               <div class="row">
                 <div>
                   <label class="sub-label">ステータス</label>
                   <select v-model="p.status">
-                    <option value="known_not_affected">影響なし (known_not_affected)</option>
-                    <option value="known_affected">影響あり (known_affected)</option>
-                    <option value="fixed">修正済み (fixed)</option>
-                    <option value="under_investigation">調査中 (under_investigation)</option>
+                    <option v-for="(label, k) in L.vex.status" :key="k" :value="k">
+                      {{ label }} ({{ k }})
+                    </option>
                   </select>
                 </div>
 
                 <div v-if="p.status === 'known_not_affected'">
                   <label class="sub-label">影響なしの理由 (Justification)</label>
                   <select v-model="p.justification">
-                    <option value="vulnerable_code_not_present">該当コード未搭載 (not_present)</option>
-                    <option value="vulnerable_code_not_in_execute_path">実行パスが存在しない (not_in_execute_path)</option>
-                    <option value="vulnerable_code_cannot_be_controlled_by_adversary">攻撃者から制御不能 (cannot_be_controlled)</option>
-                    <option value="inline_mitigations_already_exist">緩和策適用済み (mitigations_exist)</option>
+                    <option v-for="(label, k) in L.vex.justification" :key="k" :value="k">
+                      {{ label }} ({{ k }})
+                    </option>
                   </select>
                 </div>
               </div>
 
-              <div>
-                <input type="text" v-model="p.detail" placeholder="補足説明・回避策・パッチ情報など（任意）" />
-              </div>
-
               <div class="del-btn-bar">
-                <button type="button" class="del-btn" @click="removeProd(index)">この製品を削除</button>
+                <button type="button" class="del-btn" @click="removeProd(index)">{{ L.vex.btnDelProd }}</button>
               </div>
             </div>
 
-            <button type="button" @click="addProd" class="add-btn">+ 製品を追加</button>
+            <button type="button" @click="addProd" class="add-btn">{{ L.vex.btnAddProd }}</button>
           </div>
 
           <!-- ② Excelコピペ (TSV一括) モード -->
           <div v-else class="mode-content paste-container">
-            <p class="hint-text">
-              Excel やスプレッドシートの行（製品名 / バージョン / ステータス / 理由 / 補足）をそのまま貼り付けできます。
-            </p>
-            <textarea
-              v-model="pasteText"
-              rows="8"
-              class="tsv-textarea"
-              placeholder="製品名&#9;バージョン&#9;ステータス&#9;影響なし理由&#9;補足メモ&#10;例:&#10;Gateway Appliance&#9;v2.4.1以前&#9;影響なし&#9;該当コード未搭載&#9;機能オフ&#10;Sensor Node&#9;v1.0.0&#9;影響あり&#9;&#9;次回FWで修正&#10;Cloud Console&#9;全バージョン&#9;修正済み&#9;&#9;2026-10-28適用済"
-            ></textarea>
+            <details class="paste-guide" open>
+              <summary>{{ L.vex.pasteGuideTitle }}</summary>
+              <div class="guide-content">
+                <p>{{ L.vex.pasteGuideIntro }}</p>
 
-            <div v-if="pasteNotes.length" class="paste-notes">
-              <p v-for="(note, i) in pasteNotes" :key="i" class="note-item">ℹ️ {{ note }}</p>
-            </div>
+                <div class="allowed-words">
+                  <p><strong>【指定文言リスト】</strong></p>
+                  <ul>
+                    <li><strong>ステータス</strong>: 
+                      <code v-for="(label, k) in L.vex.status" :key="k">{{ label }} </code>
+                    </li>
+                    <li><strong>影響なし理由</strong>: 
+                      <code v-for="(label, k) in L.vex.justification" :key="k">{{ label }} </code>
+                    </li>
+                  </ul>
+                </div>
+
+                <button type="button" class="btn-sub" @click="copyTemplateHeader">
+                  {{ L.vex.btnCopyHeader }}
+                </button>
+              </div>
+            </details>
+
+            <textarea v-model="pasteText" rows="7" class="tsv-textarea" :placeholder="L.vex.pastePh"></textarea>
 
             <div class="paste-btn-bar">
               <button type="button" class="primary" @click="handleImportPaste('append')">
-                + 一括追加（表の末尾に追加）
+                {{ L.vex.btnImportAppend }}
               </button>
               <button type="button" class="btn-warn" @click="handleImportPaste('replace')">
-                🔄 既存の表を上書き
-              </button>
-              <button type="button" class="btn-sub" @click="handleExportToPasteArea">
-                📤 現在の表をここに出力
+                {{ L.vex.btnImportReplace }}
               </button>
             </div>
           </div>
         </div>
-
-        <!-- 関連URL -->
-        <div>
-          <label>参照リンク (URL)</label>
-          <textarea v-model="refs" rows="2" placeholder="https://..."></textarea>
-        </div>
       </form>
     </div>
 
-    <!-- 右側：出力パネル -->
     <div class="panel out">
       <OutputPanel :tabs="tabs" base-name="vex-statement" />
     </div>
