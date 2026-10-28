@@ -4,7 +4,7 @@ import AdvisoryMode from './modes/AdvisoryMode.vue'
 import SbomMode from './modes/SbomMode.vue'
 import CvssCalculatorMode from './modes/CvssCalculatorMode.vue'
 
-type ModeKey = 'advisory' | 'SBOM' | 'cvss'
+type ModeKey = 'advisory' | 'sbom' | 'cvss'
 
 interface ModeItem {
   key: ModeKey
