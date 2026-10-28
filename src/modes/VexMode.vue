@@ -265,13 +265,19 @@ const tabs = computed<OutputTab[]>(() => [
                 <p>{{ L.vex.pasteGuideIntro }}</p>
 
                 <div class="allowed-words">
-                  <p><strong>【指定文言リスト】</strong></p>
+                  <p><strong>【指定文言リスト】</strong>（以下のいずれかの文字をそのままご使用ください）</p>
                   <ul>
-                    <li><strong>ステータス</strong>: 
-                      <code v-for="(label, k) in L.vex.status" :key="k">{{ label }} </code>
+                    <li>
+                      <strong>ステータス</strong>: 
+                      <span class="code-badge-group">
+                        <code v-for="(label, k) in L?.vex?.status" :key="k">{{ label }}</code>
+                      </span>
                     </li>
-                    <li><strong>影響なし理由</strong>: 
-                      <code v-for="(label, k) in L.vex.justification" :key="k">{{ label }} </code>
+                    <li>
+                      <strong>影響なし理由</strong>: 
+                      <span class="code-badge-group">
+                        <code v-for="(label, k) in L?.vex?.justification" :key="k">{{ label }}</code>
+                      </span>
                     </li>
                   </ul>
                 </div>
@@ -427,5 +433,31 @@ const tabs = computed<OutputTab[]>(() => [
 .btn-warn {
   background-color: #d9534f;
   color: white;
+}
+.allowed-words ul {
+  margin: 6px 0 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.code-badge-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.code-badge-group code {
+  background: var(--bg-sub, #eef2f7);
+  border: 1px solid var(--border, #cbd5e1);
+  color: var(--text, #1e293b);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.82rem;
+  white-space: nowrap;
 }
 </style>
