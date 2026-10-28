@@ -11,6 +11,7 @@ import {
   buildVector 
 } from '../lib/cvss'
 import OutputPanel from '../components/OutputPanel.vue'
+import type { OutputTab } from '../lib/output'
 
 // バージョン（3.1 / 3.0）
 const version = ref<CvssVersion>('3.1')
@@ -74,15 +75,16 @@ const score = computed(() => cvssScore(version.value, metrics.value))
 const severity = computed(() => severityOf(score.value))
 
 // OutputPanel に渡すタブデータの作成
-const tabs = computed(() => [
+const tabs = computed<OutputTab[]>(() => [
   {
-    key: 'markdown',
+    id: 'markdown',
     label: 'Markdown',
     content: `### CVSS v${version.value} 評価結果\n- **スコア**: ${score.value.toFixed(1)} (${SEVERITY_JA[severity.value]})\n- **ベクトル**: \`${currentVector.value}\`\n`,
-    filename: 'cvss-result.md'
+    ext: '.md',
+    mime: 'text/markdown;charset=utf-8'
   },
   {
-    key: 'json',
+    id: 'json',
     label: 'JSON',
     content: JSON.stringify({
       version: version.value,
@@ -91,7 +93,8 @@ const tabs = computed(() => [
       severity: severity.value,
       metrics: metrics.value
     }, null, 2),
-    filename: 'cvss-result.json'
+    ext: '.json',
+    mime: 'application/json;charset=utf-8'
   }
 ])
 </script>
@@ -104,42 +107,42 @@ const tabs = computed(() => [
       <p class="hint">項目をクリックするか、よくあるシナリオのプリセットを選んで素早く評価できます。</p>
 
       <!-- バージョン切り替え ＆ ベクトル直接入力 -->
-      <div class="bar" style="margin-top: 14px;">
-        <div class="version-switch" style="display: flex; gap: 12px; align-items: center;">
-          <label style="margin: 0; cursor: pointer;">
+      <div class="bar bar-top">
+        <div class="version-switch">
+          <label class="ver-label">
             <input 
               type="radio" 
               name="cvss-ver" 
               :checked="version === '3.1'" 
               @change="setVersion('3.1')" 
-              style="width: auto; margin-right: 4px;"
+              class="ver-radio"
             /> CVSS v3.1
           </label>
-          <label style="margin: 0; cursor: pointer;">
+          <label class="ver-label">
             <input 
               type="radio" 
               name="cvss-ver" 
               :checked="version === '3.0'" 
               @change="setVersion('3.0')" 
-              style="width: auto; margin-right: 4px;"
+              class="ver-radio"
             /> CVSS v3.0
           </label>
         </div>
       </div>
 
-      <div class="row" style="margin-top: 8px;">
-        <div style="display: flex; gap: 8px; width: 100%; grid-column: span 2;">
+      <div class="row row-top">
+        <div class="vec-row">
           <input 
             type="text" 
             v-model="vectorInput" 
             placeholder="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" 
             @keyup.enter="applyVector"
-            style="font-family: monospace; flex: 1;"
+            class="vec-input"
           />
           <button type="button" class="primary" @click="applyVector">適用</button>
         </div>
       </div>
-      <p v-if="parseError" class="hint warn" style="margin-top: 4px;">{{ parseError }}</p>
+      <p v-if="parseError" class="hint warn parse-error">{{ parseError }}</p>
 
       <!-- グラフィカル・スコアタワー（共通パネルのデザインに統合） -->
       <div class="score-tower" :data-severity="severity">
@@ -149,7 +152,7 @@ const tabs = computed(() => [
 
       <!-- 💡 よくある脆弱性シナリオプリセット群 -->
       <div class="preset-section">
-        <label style="margin-top: 0;">💡 よくある脆弱性シナリオ（クリックで反映）:</label>
+        <label class="preset-title">💡 よくある脆弱性シナリオ（クリックで反映）:</label>
         <div class="preset-cards">
           
           <div class="preset-card" @click="applyPreset('CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H')">
@@ -180,14 +183,13 @@ const tabs = computed(() => [
         <fieldset v-for="def in METRICS" :key="def.code">
           <legend>{{ def.name }}</legend>
           <p class="mdesc">{{ def.desc }}</p>
-          <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 6px;">
+          <div class="opt-list">
             <label
               v-for="opt in def.options"
               :key="opt.code"
-              class="opt"
+              class="opt metric-opt"
               :class="{ 'active-opt': metrics[def.code] === opt.code }"
               @click="selectOption(def.code, opt.code)"
-              style="cursor: pointer; padding: 4px 6px; border-radius: 4px; margin: 2px 0;"
             >
               <input
                 type="radio"
@@ -196,8 +198,8 @@ const tabs = computed(() => [
                 :checked="metrics[def.code] === opt.code"
                 @change.stop="selectOption(def.code, opt.code)"
               />
-              <span :class="{ on: metrics[def.code] === opt.code }" style="font-family: monospace;">[{{ opt.code }}] {{ opt.label }}</span>
-              <span class="od" style="color: var(--sub); font-size: 0.8rem;">{{ opt.desc }}</span>
+              <span class="opt-code" :class="{ on: metrics[def.code] === opt.code }">[{{ opt.code }}] {{ opt.label }}</span>
+              <span class="od opt-desc">{{ opt.desc }}</span>
             </label>
           </div>
         </fieldset>
@@ -212,6 +214,21 @@ const tabs = computed(() => [
 </template>
 
 <style scoped>
+/* インラインの style 属性をやめ、クラスにしたもの（CSP の方針に合わせるため） */
+.bar-top { margin-top: 14px; }
+.version-switch { display: flex; gap: 12px; align-items: center; }
+.ver-label { margin: 0; cursor: pointer; }
+.ver-radio { width: auto; margin-right: 4px; }
+.row-top { margin-top: 8px; }
+.vec-row { display: flex; gap: 8px; width: 100%; grid-column: span 2; }
+.vec-input { font-family: monospace; flex: 1; }
+.parse-error { margin-top: 4px; }
+.preset-title { margin-top: 0; }
+.opt-list { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.metric-opt { cursor: pointer; padding: 4px 6px; border-radius: 4px; margin: 2px 0; }
+.opt-code { font-family: monospace; }
+.opt-desc { color: var(--sub); font-size: 0.8rem; }
+
 /* スコアタワーの共通変数・クラス準拠スタイル */
 .score-tower {
   margin-top: 14px;
