@@ -1,5 +1,3 @@
-// src/lib/vex.ts
-
 import { cveList, cveOk } from './advisory'
 import { I18N_JA } from './i18n-ja'
 
@@ -17,7 +15,7 @@ export interface VexProduct {
   version: string
   status: VexStatus
   justification: VexJustification
-  detail: string // 補足説明やパッチ情報など
+  detail: string
 }
 
 export interface VexForm {
@@ -75,7 +73,6 @@ export function parseVexProducts(text: string): { products: VexProduct[]; warnin
   const warnings: string[] = []
 
   rawLines.forEach((line, idx) => {
-    // 1行目のヘッダー自動スキップ判定
     if (idx === 0 && /^(製品|プロダクト|Product|Name|名称)\b/i.test(line)) {
       return
     }
@@ -89,7 +86,6 @@ export function parseVexProducts(text: string): { products: VexProduct[]; warnin
     const rawJust = cols[3] || ''
     const detail = cols[4] || cols.slice(3).join(' ')
 
-    // ステータスの判定（日本語・英語対応）
     let status: VexStatus = 'known_not_affected'
     const sLower = rawStatus.toLowerCase()
     if (sLower.includes('affected') || sLower.includes('影響あり') || sLower.includes('対象')) {
@@ -104,7 +100,6 @@ export function parseVexProducts(text: string): { products: VexProduct[]; warnin
       status = 'under_investigation'
     }
 
-    // 影響なし理由（Justification）の判定
     let justification: VexJustification = status === 'known_not_affected' ? 'vulnerable_code_not_present' : ''
     const jLower = rawJust.toLowerCase()
     if (jLower.includes('not_in_execute_path') || jLower.includes('実行パス') || jLower.includes('経路')) {
@@ -133,7 +128,7 @@ export function parseVexProducts(text: string): { products: VexProduct[]; warnin
   return { products, warnings }
 }
 
-/** 現在の製品リストを Excel 貼り付け用 TSV 文字列に変換 */
+/** 現在の製品リストを TSV 文字列に変換 */
 export function toVexTsv(products: VexProduct[]): string {
   const statusJA = I18N_JA.vex.status
   const justJA = I18N_JA.vex.justification
@@ -145,27 +140,6 @@ export function toVexTsv(products: VexProduct[]): string {
       p.name,
       p.version,
       statusJA[p.status] || p.status,
-      p.status === 'known_not_affected' ? (justJA[p.justification] || p.justification) : '',
-      p.detail
-    ].join('\t'))
-
-  return [header, ...rows].join('\n')
-}
-
-  const justJA: Record<string, string> = {
-    vulnerable_code_not_present: '該当コード未搭載',
-    vulnerable_code_not_in_execute_path: '実行パスが存在しない',
-    vulnerable_code_cannot_be_controlled_by_adversary: '攻撃者から制御不能',
-    inline_mitigations_already_exist: '緩和策適用済み'
-  }
-
-  const header = '製品名\tバージョン\tステータス\t影響なし理由\t補足メモ'
-  const rows = products
-    .filter((p) => p.name.trim() || p.version.trim())
-    .map((p) => [
-      p.name,
-      p.version,
-      statusJA[p.status],
       p.status === 'known_not_affected' ? (justJA[p.justification] || p.justification) : '',
       p.detail
     ].join('\t'))
