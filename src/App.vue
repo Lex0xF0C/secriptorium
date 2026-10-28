@@ -2,6 +2,7 @@
 import { ref, shallowRef } from 'vue'
 import AdvisoryMode from './modes/AdvisoryMode.vue'
 import SbomMode from './modes/SbomMode.vue'
+import VexMode from './modes/VexMode.vue' 
 import CvssCalculatorMode from './modes/CvssCalculatorMode.vue'
 
 type ModeKey = 'advisory' | 'sbom' | 'cvss'
@@ -18,6 +19,7 @@ const currentComponent = shallowRef(AdvisoryMode)
 
 const modes: ModeItem[] = [
   { key: 'advisory', label: '脆弱性アドバイザリ', component: AdvisoryMode, enabled: true },
+  { key: 'vex', label: '製品ポートフォリオ VEX (CSAF VEX)', component: VexMode, enabled: true }, 
   { key: 'sbom', label: 'SBOM / VEX', component: SbomMode, enabled: true },
   { key: 'cvss', label: 'CVSS v3.x 計算機', component: CvssCalculatorMode, enabled: true },
 ]
