@@ -16,6 +16,9 @@ import {
 // 入力モード切替 ('form' | 'paste')
 const inputMode = ref<'form' | 'paste'>('form')
 
+// テンプレートで L.vex を使うために代入が必要
+const L = I18N_JA
+  
 // フォーム入力状態 (メモリ内管理)
 const cve = ref('')
 const aid = ref('')
