@@ -3,6 +3,7 @@
 **Static. Client-side. Nothing leaves your browser.**
 
 [Live Demo](https://lex0xf0c.github.io/secriptorium/)[https://lex0xf0c.github.io/secriptorium/](https://lex0xf0c.github.io/secriptorium/)
+
 [日本語](#日本語) | [English](#english) | [License](#license--ライセンス)
 
 ---
