@@ -43,6 +43,7 @@ export interface AdvisoryI18n {
     refsLabel: string;
     status: Record<string, string>;
     justification: Record<string, string>;
+    actionCategory: Record<string, string>; 
   };
 }
 
@@ -296,6 +297,13 @@ export const I18N_JA: AdvisoryI18n = {
       "vulnerable_code_not_in_execute_path": "実行パスが存在しない",
       "vulnerable_code_cannot_be_controlled_by_adversary": "攻撃者から制御不能",
       "inline_mitigations_already_exist": "緩和策適用済み"
+    },
+    "actionCategory": {
+      "workaround": "回避策 (workaround)",
+      "mitigation": "軽減策 (mitigation)",
+      "none_available": "対応予定・修正未提供 (none_available)",
+      "vendor_fix": "ベンダー修正 (vendor_fix)",
+      "impact": "影響・脅威の説明 (impact)"
     }
   }
 };

@@ -10,11 +10,14 @@ export type VexJustification =
   | 'inline_mitigations_already_exist'
   | ''
 
+export type VexActionCategory = 'vendor_fix' | 'workaround' | 'mitigation' | 'none_available' | 'impact'
+
 export interface VexProduct {
   name: string
   version: string
   status: VexStatus
   justification: VexJustification
+  actionCategory: VexActionCategory // ★ 明示的分類
   detail: string
 }
 
@@ -41,7 +44,7 @@ export function emptyVexForm(): VexForm {
     published: `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`,
     summary: '',
     products: [
-      { name: '', version: '', status: 'known_not_affected', justification: 'vulnerable_code_not_present', detail: '' }
+      { name: '', version: '', status: 'known_not_affected', justification: 'vulnerable_code_not_present', actionCategory: 'impact', detail: '' }
     ],
     refs: '',
     contact: '',
@@ -51,7 +54,6 @@ export function emptyVexForm(): VexForm {
 const T = (s: unknown) => (typeof s === 'string' ? s.trim() : String(s || '').trim())
 const lines = (s: string) => T(s).split('\n').map(T).filter(Boolean)
 
-/** CSAF VEX バリデーション警告 */
 export function vexWarnings(f: VexForm): string[] {
   const w: string[] = []
   const cves = cveList(f.cve)
@@ -66,7 +68,7 @@ export function vexWarnings(f: VexForm): string[] {
   return w
 }
 
-/** Excel / スプレッドシートからのタブ区切りテキスト（TSV）をパース */
+/** Excel / スプレッドシートからの TSV パース */
 export function parseVexProducts(text: string): { products: VexProduct[]; warnings: string[] } {
   const rawLines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
   const products: VexProduct[] = []
@@ -112,11 +114,20 @@ export function parseVexProducts(text: string): { products: VexProduct[]; warnin
       justification = 'vulnerable_code_not_present'
     }
 
+    // デフォルトの分類設定
+    let actionCategory: VexActionCategory = 'impact'
+    if (status === 'fixed') {
+      actionCategory = 'vendor_fix'
+    } else if (status === 'known_affected') {
+      actionCategory = 'workaround'
+    }
+
     products.push({
       name,
       version,
       status,
       justification,
+      actionCategory,
       detail: cols[4] ? detail : (rawJust && !justification ? rawJust : detail)
     })
   })
@@ -128,10 +139,9 @@ export function parseVexProducts(text: string): { products: VexProduct[]; warnin
   return { products, warnings }
 }
 
-/** 現在の製品リストを TSV 文字列に変換 */
 export function toVexTsv(products: VexProduct[]): string {
-  const statusJA = I18N_JA.vex.status
-  const justJA = I18N_JA.vex.justification
+  const statusJA = I18N_JA?.vex?.status || {}
+  const justJA = I18N_JA?.vex?.justification || {}
 
   const header = '製品名\tバージョン\tステータス\t影響なし理由\t補足メモ'
   const rows = products
@@ -182,21 +192,26 @@ export function buildCsafVex(f: VexForm) {
 
   const remediations: any[] = []
   const threats: any[] = []
+
+  // ★ 明示的な actionCategory を元に CSAF 構造へ割り当て
   prodWithIds.forEach((p) => {
-    if (T(p.detail)) {
-      if (p.status === 'fixed' || p.status === 'known_affected') {
-        remediations.push({
-          category: p.status === 'fixed' ? 'vendor_fix' : 'workaround',
-          details: `${T(p.name)} ${T(p.version)}: ${T(p.detail)}`,
-          product_ids: [p.id]
-        })
-      } else {
-        threats.push({
-          category: 'impact',
-          details: `${T(p.name)} ${T(p.version)}: ${T(p.detail)}`,
-          product_ids: [p.id]
-        })
-      }
+    if (!T(p.detail)) return
+
+    const detailText = `${T(p.name)} ${T(p.version)}: ${T(p.detail)}`
+    const cat = p.actionCategory || (p.status === 'fixed' ? 'vendor_fix' : 'impact')
+
+    if (['vendor_fix', 'workaround', 'mitigation', 'none_available'].includes(cat)) {
+      remediations.push({
+        category: cat,
+        details: detailText,
+        product_ids: [p.id]
+      })
+    } else {
+      threats.push({
+        category: 'impact',
+        details: detailText,
+        product_ids: [p.id]
+      })
     }
   })
 
