@@ -16,19 +16,19 @@ export interface VexProduct {
   version: string
   status: VexStatus
   justification: VexJustification
-  detail: string // 補足説明や緩和策・修正パッチURL
+  detail: string // 補足説明やパッチ情報など
 }
 
 export interface VexForm {
-  cve: string // 対象のCVE番号（例: CVE-2026-1234）
-  advisoryId: string // 文書管理番号（例: VEX-2026-001）
-  publisherName: string // 発行者名
-  publisherNamespace: string // 発行者URL（https://...）
-  published: string // 公開日 (yyyy-mm-dd)
-  summary: string // 調査の全体概要
-  products: VexProduct[] // 製品ポートフォリオ一覧
-  refs: string // 参照リンク
-  contact: string // 問い合わせ窓口
+  cve: string
+  advisoryId: string
+  publisherName: string
+  publisherNamespace: string
+  published: string
+  summary: string
+  products: VexProduct[]
+  refs: string
+  contact: string
 }
 
 export function emptyVexForm(): VexForm {
@@ -51,9 +51,8 @@ export function emptyVexForm(): VexForm {
 
 const T = (s: string) => s.trim()
 const lines = (s: string) => T(s).split('\n').map(T).filter(Boolean)
-const oneLine = (s: string) => T(s).replace(/\s*\n\s*/g, ' ')
 
-/** CSAF VEX として不足している必須項目の検証 */
+/** CSAF VEX バリデーション警告 */
 export function vexWarnings(f: VexForm): string[] {
   const w: string[] = []
   const cves = cveList(f.cve)
@@ -68,19 +67,112 @@ export function vexWarnings(f: VexForm): string[] {
   return w
 }
 
+/** Excel / スプレッドシートからのタブ区切りテキスト（TSV）をパース */
+export function parseVexProducts(text: string): { products: VexProduct[]; warnings: string[] } {
+  const rawLines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
+  const products: VexProduct[] = []
+  const warnings: string[] = []
+
+  rawLines.forEach((line, idx) => {
+    // 1行目のヘッダー自動スキップ判定
+    if (idx === 0 && /^(製品|プロダクト|Product|Name|名称)\b/i.test(line)) {
+      return
+    }
+
+    const cols = line.split('\t').map((c) => c.trim())
+    if (cols.length === 0 || !cols[0]) return
+
+    const name = cols[0]
+    const version = cols[1] || ''
+    const rawStatus = cols[2] || ''
+    const rawJust = cols[3] || ''
+    const detail = cols[4] || cols.slice(3).join(' ')
+
+    // ステータスの判定（日本語・英語対応）
+    let status: VexStatus = 'known_not_affected'
+    const sLower = rawStatus.toLowerCase()
+    if (sLower.includes('affected') || sLower.includes('影響あり') || sLower.includes('対象')) {
+      if (sLower.includes('not') || sLower.includes('影響なし') || sLower.includes('対象外')) {
+        status = 'known_not_affected'
+      } else {
+        status = 'known_affected'
+      }
+    } else if (sLower.includes('fixed') || sLower.includes('修正') || sLower.includes('対応済')) {
+      status = 'fixed'
+    } else if (sLower.includes('investigation') || sLower.includes('調査') || sLower.includes('確認中')) {
+      status = 'under_investigation'
+    }
+
+    // 影響なし理由（Justification）の判定
+    let justification: VexJustification = status === 'known_not_affected' ? 'vulnerable_code_not_present' : ''
+    const jLower = rawJust.toLowerCase()
+    if (jLower.includes('not_in_execute_path') || jLower.includes('実行パス') || jLower.includes('経路')) {
+      justification = 'vulnerable_code_not_in_execute_path'
+    } else if (jLower.includes('cannot_be_controlled') || jLower.includes('制御不能')) {
+      justification = 'vulnerable_code_cannot_be_controlled_by_adversary'
+    } else if (jLower.includes('mitigations') || jLower.includes('緩和策')) {
+      justification = 'inline_mitigations_already_exist'
+    } else if (jLower.includes('not_present') || jLower.includes('未搭載') || jLower.includes('存在しない')) {
+      justification = 'vulnerable_code_not_present'
+    }
+
+    products.push({
+      name,
+      version,
+      status,
+      justification,
+      detail: cols[4] ? detail : (rawJust && !justification ? rawJust : detail)
+    })
+  })
+
+  if (products.length === 0 && rawLines.length > 0) {
+    warnings.push('有効な製品データが検出できませんでした。タブ区切り（TSV）形式になっているか確認してください。')
+  }
+
+  return { products, warnings }
+}
+
+/** 現在の製品リストを Excel 貼り付け用 TSV 文字列に変換 */
+export function toVexTsv(products: VexProduct[]): string {
+  const statusJA: Record<VexStatus, string> = {
+    known_not_affected: '影響なし',
+    known_affected: '影響あり',
+    fixed: '修正済み',
+    under_investigation: '調査中'
+  }
+
+  const justJA: Record<string, string> = {
+    vulnerable_code_not_present: '該当コード未搭載',
+    vulnerable_code_not_in_execute_path: '実行パスが存在しない',
+    vulnerable_code_cannot_be_controlled_by_adversary: '攻撃者から制御不能',
+    inline_mitigations_already_exist: '緩和策適用済み'
+  }
+
+  const header = '製品名\tバージョン\tステータス\t影響なし理由\t補足メモ'
+  const rows = products
+    .filter((p) => p.name.trim() || p.version.trim())
+    .map((p) => [
+      p.name,
+      p.version,
+      statusJA[p.status],
+      p.status === 'known_not_affected' ? (justJA[p.justification] || p.justification) : '',
+      p.detail
+    ].join('\t'))
+
+  return [header, ...rows].join('\n')
+}
+
 /** CSAF 2.0 VEX (csaf_vex) JSON の生成 */
 export function buildCsafVex(f: VexForm) {
   const validProducts = f.products.filter((p) => T(p.name) || T(p.version))
   const date = T(f.published) ? `${T(f.published)}T00:00:00Z` : ''
   const vendor = T(f.publisherName)
 
-  // 製品ごとにユニークな Product ID を採番
   const prodWithIds = validProducts.map((p, i) => ({
     ...p,
     id: `CSAFPID-${String(i + 1).padStart(4, '0')}`
   }))
 
-  // ステータスごとの Product ID グルーピング
   const statusGroup: Record<VexStatus, string[]> = {
     known_not_affected: [],
     known_affected: [],
@@ -92,7 +184,6 @@ export function buildCsafVex(f: VexForm) {
     statusGroup[p.status].push(p.id)
   })
 
-  // not_affected 時の Justification (flags) の構築
   const flags: any[] = []
   const notAffectedProds = prodWithIds.filter((p) => p.status === 'known_not_affected' && p.justification)
   const justGroup: Record<string, string[]> = {}
@@ -104,7 +195,6 @@ export function buildCsafVex(f: VexForm) {
     flags.push({ label: just, product_ids: ids })
   })
 
-  // 補足コメント（threats / remediations）の構築
   const remediations: any[] = []
   const threats: any[] = []
   prodWithIds.forEach((p) => {
