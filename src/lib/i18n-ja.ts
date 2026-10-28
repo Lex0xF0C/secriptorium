@@ -13,6 +13,37 @@ export interface AdvisoryI18n {
   presets: Record<string, [string, string][]>;
   cwes: string[];
   cweText: Record<string, [string, string]>;
+  vex: {
+    title: string;
+    intro: string;
+    cveLabel: string;
+    cvePh: string;
+    pubNameLabel: string;
+    pubNamePh: string;
+    pubNsLabel: string;
+    pubNsPh: string;
+    docIdLabel: string;
+    docIdPh: string;
+    pubDateLabel: string;
+    summaryLabel: string;
+    summaryPh: string;
+    prodSectionTitle: string;
+    modeForm: string;
+    modePaste: string;
+    btnCopyTsv: string;
+    btnCopyHeader: string;
+    btnAddProd: string;
+    btnDelProd: string;
+    btnImportAppend: string;
+    btnImportReplace: string;
+    btnExportPaste: string;
+    pasteGuideTitle: string;
+    pasteGuideIntro: string;
+    pastePh: string;
+    refsLabel: string;
+    status: Record<string, string>;
+    justification: Record<string, string>;
+  };
 }
 
 export const I18N_JA: AdvisoryI18n = {
@@ -222,5 +253,46 @@ export const I18N_JA: AdvisoryI18n = {
     "CWE-798": ["〇〇製品に認証情報が固定で埋め込まれているため、第三者がその情報を使って製品にアクセスできてしまう脆弱性が存在します。", "auth"],
     "CWE-862": ["〇〇製品の△△△△機能において、操作の権限の確認が不十分なため、権限のない利用者が本来許可されていない操作や情報へアクセスできてしまう脆弱性が存在します。", "authz"],
     "CWE-918": ["〇〇製品の△△△△機能において、外部から指定された宛先へサーバがリクエストを送信してしまうため、外部から到達できない内部の資源へアクセスされる脆弱性が存在します。", "ssrf"]
+  },
+  "vex": {
+    "title": "製品ポートフォリオ VEX 作成",
+    "intro": "特定CVEに対する自社製品群の影響調査ステータスを CSAF 2.0 VEX 形式で一括出力します。",
+    "cveLabel": "対象 CVE 番号（必須）",
+    "cvePh": "例：CVE-2026-1234",
+    "pubNameLabel": "発行者名（組織名・PSIRT名）",
+    "pubNamePh": "例：株式会社サンプル PSIRT",
+    "pubNsLabel": "発行者URL（Namespace）",
+    "pubNsPh": "https://example.co.jp",
+    "docIdLabel": "文書管理番号",
+    "docIdPh": "VEX-2026-001",
+    "pubDateLabel": "公開日",
+    "summaryLabel": "調査の全体概要",
+    "summaryPh": "本脆弱性に対する自社製品群の影響調査結果です。",
+    "prodSectionTitle": "製品別ステータス設定",
+    "modeForm": "📝 フォーム入力 (1件ずつ)",
+    "modePaste": "📋 Excelコピペ (TSV一括)",
+    "btnCopyTsv": "📋 現在の表をExcel用にコピー",
+    "btnCopyHeader": "📋 Excel用空テンプレート（見出し行）をコピー",
+    "btnAddProd": "+ 製品を追加",
+    "btnDelProd": "この製品を削除",
+    "btnImportAppend": "+ 一括追加（表の末尾に追加）",
+    "btnImportReplace": "🔄 既存の表を上書き",
+    "btnExportPaste": "📤 現在の表をここに出力",
+    "pasteGuideTitle": "💡 Excelコピペのフォーマットルールと指定文言",
+    "pasteGuideIntro": "Excelのセルをコピーして貼り付ける場合、以下の5列（タブ区切り）の順で並べてください。",
+    "pastePh": "製品名\tバージョン\tステータス\t影響なし理由\t補足メモ\nGateway Appliance\tv2.4以前\t影響なし\t該当コード未搭載\t機能オフのため影響なし\nSensor Node\tv1.0.0\t影響あり\t\t次回FWで修正予定",
+    "refsLabel": "参照リンク (URL)",
+    "status": {
+      "known_not_affected": "影響なし",
+      "known_affected": "影響あり",
+      "fixed": "修正済み",
+      "under_investigation": "調査中"
+    },
+    "justification": {
+      "vulnerable_code_not_present": "該当コード未搭載",
+      "vulnerable_code_not_in_execute_path": "実行パスが存在しない",
+      "vulnerable_code_cannot_be_controlled_by_adversary": "攻撃者から制御不能",
+      "inline_mitigations_already_exist": "緩和策適用済み"
+    }
   }
 };
