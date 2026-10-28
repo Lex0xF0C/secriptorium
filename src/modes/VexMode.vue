@@ -198,20 +198,26 @@ const tabs = computed<OutputTab[]>(() => [
 
       <form @submit.prevent class="form-container">
         <!-- 対象CVE番号 -->
-        <div>
-          <label>{{ L.vex.cveLabel }}</label>
-          <input type="text" v-model="cve" :placeholder="L.vex.cvePh" />
-        </div>
-
-        <!-- 発行者情報 -->
         <div class="row">
           <div>
-            <label>{{ L.vex.pubNameLabel }}</label>
-            <input type="text" v-model="publisherName" :placeholder="L.vex.pubNamePh" />
+            <label>{{ L?.vex?.cveLabel }}</label>
+            <input type="text" v-model="cve" :placeholder="L?.vex?.cvePh" />
           </div>
           <div>
-            <label>{{ L.vex.pubNsLabel }}</label>
-            <input type="url" v-model="publisherNamespace" :placeholder="L.vex.pubNsPh" />
+            <label>{{ L?.vex?.docIdLabel }}</label>
+            <input type="text" v-model="aid" :placeholder="L?.vex?.docIdPh" />
+          </div>
+        </div>
+        
+        <!-- 公開日 & 発行者名 -->
+        <div class="row">
+          <div>
+            <label>{{ L?.vex?.pubDateLabel }}</label>
+            <input type="date" v-model="pub" />
+          </div>
+          <div>
+            <label>{{ L?.vex?.pubNameLabel }}</label>
+            <input type="text" v-model="publisherName" :placeholder="L?.vex?.pubNamePh" />
           </div>
         </div>
 
