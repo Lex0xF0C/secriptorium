@@ -132,7 +132,7 @@ export const I18N_JA: AdvisoryI18n = {
     "pubd": "この脆弱性情報ページを公開しました。",
     "fLvl": "（{l}）",
     "fLint": "公開前に確認が必要な項目：あと{n}件",
-    "lintOk": "必須項目はそろっています"
+    "lintOk": "必須項目はそろっています",
     "copyTsv": "📋 Excel用空テンプレート（見出し行）をコピー",
     "copiedTsv": "製品テーブルの見出し行（TSV）をコピーしました。Excel等に貼り付けて編集できます。",
     "presetSuccess": "定型文を挿入しました" 
