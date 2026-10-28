@@ -161,7 +161,7 @@ export function toVexTsv(products: VexProduct[]): string {
 export function buildCsafVex(f: VexForm) {
   const validProducts = f.products.filter((p) => T(p.name) || T(p.version))
   const date = T(f.published) ? `${T(f.published)}T00:00:00Z` : ''
-  const vendor = T(f.publisherName)
+  const vendor = T(f.publisherName) || 'Vendor'
 
   const prodWithIds = validProducts.map((p, i) => ({
     ...p,
@@ -221,6 +221,30 @@ export function buildCsafVex(f: VexForm) {
 
   const cves = cveList(f.cve).filter(cveOk).map((c) => c.toUpperCase())
 
+  // ★1. 製品名 (p.name) ごとにグループ化する
+  const productGroupMap = new Map<string, typeof prodWithIds>()
+  prodWithIds.forEach((p) => {
+    const pName = T(p.name) || 'Unknown Product'
+    if (!productGroupMap.has(pName)) {
+      productGroupMap.set(pName, [])
+    }
+    productGroupMap.get(pName)!.push(p)
+  })
+
+  // ★2. グループ化した製品名の下に各バージョンブランチを並べる
+  const productBranches = Array.from(productGroupMap.entries()).map(([pName, items]) => ({
+    category: 'product_name',
+    name: pName,
+    branches: items.map((item) => ({
+      category: 'product_version',
+      name: T(item.version) || 'unknown',
+      product: {
+        name: `${T(item.name)} ${T(item.version)}`.trim(),
+        product_id: item.id
+      }
+    }))
+  }))
+
   return {
     document: {
       category: 'csaf_vex',
@@ -238,27 +262,20 @@ export function buildCsafVex(f: VexForm) {
       },
       notes: T(f.summary) ? [{ category: 'summary', title: '概要', text: T(f.summary) }] : undefined
     },
+    
+    // ★3. 重複が解消されたスマートなプロダクトツリーを出力
     product_tree: validProducts.length
       ? {
           branches: [
             {
               category: 'vendor',
               name: vendor,
-              branches: validProducts.map((p, i) => ({
-                category: 'product_name',
-                name: T(p.name),
-                branches: [
-                  {
-                    category: 'product_version',
-                    name: T(p.version) || 'unknown',
-                    product: { name: `${T(p.name)} ${T(p.version)}`.trim(), product_id: prodWithIds[i].id }
-                  }
-                ]
-              }))
+              branches: productBranches
             }
           ]
         }
       : undefined,
+
     vulnerabilities: (cves.length ? cves : [undefined]).map((cve) => ({
       cve,
       product_status: {
