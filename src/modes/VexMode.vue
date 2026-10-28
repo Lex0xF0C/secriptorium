@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import OutputPanel from '../components/OutputPanel.vue'
 import type { OutputTab } from '../lib/output'
+import { I18N_JA } from '../lib/i18n-ja'
 import {
   buildCsafVex,
   vexWarnings,
