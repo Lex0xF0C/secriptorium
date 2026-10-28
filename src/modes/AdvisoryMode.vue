@@ -5,12 +5,15 @@ import OutputPanel from '../components/OutputPanel.vue'
 import type { OutputTab } from '../lib/output'
 import CvssPicker from '../components/CvssPicker.vue'
 import { cvssSummary } from '../lib/cvss'
+import { buildCsaf, csafWarnings, type AdvisoryForm } from '../lib/advisory'
 
 const L = I18N_JA
 
-// フォームの入力状態
+// フォームの入力状態（すべてメモリ内の ref で管理）
 const status = ref('normal')
 const title = ref('')
+const publisherName = ref('')
+const publisherNamespace = ref('')
 const aid = ref('')
 const cve = ref('')
 const pub = ref(new Date().toISOString().split('T')[0])
@@ -72,7 +75,6 @@ const calculatedSev = computed(() => {
 })
 
 // ベクター変更時にCvssPickerからスコアを自動連動させる
-// 手入力したスコアは上書き・削除しない（自動で入れたスコアだけが、ベクターを空にしたときに消える）
 const autoScore = ref('')
 watch(vector, (v) => {
   const s = cvssSummary(v)
@@ -85,7 +87,7 @@ watch(vector, (v) => {
   }
 })
 
-// CWE選択連動（候補から選ばれたら説明と影響を自動挿入）
+// CWE選択連動（候補から選ばれたら説明と脅威の例文を自動挿入）
 const handleCweChange = () => {
   const val = cwe.value.trim()
   const cweKey = val.split(' ')[0]
@@ -144,6 +146,26 @@ const applyPreset = (targetField: string, textTemplate: string) => {
   showToast('定型文を挿入しました')
 }
 
+// フォーム入力値を advisory.ts の AdvisoryForm 型構造に集約
+const formObject = computed<AdvisoryForm>(() => ({
+  title: title.value,
+  advisoryId: aid.value,
+  publisherName: publisherName.value,
+  publisherNamespace: publisherNamespace.value,
+  cve: cve.value,
+  published: pub.value,
+  summary: summary.value,
+  products: prods.value.map(p => ({ name: p.name, version: p.ver })),
+  cwe: cwe.value === CWE_OTHER ? cweOther.value : cwe.value,
+  description: desc.value,
+  impact: impact.value,
+  cvssVector: vector.value,
+  fix: fix.value,
+  workaround: work.value,
+  refs: refs.value,
+  contact: contact.value,
+}))
+
 // Markdown生成ロジック
 const markdownOutput = computed(() => {
   const U = L.ui
@@ -181,7 +203,6 @@ const markdownOutput = computed(() => {
     if (versioncheck.value.trim()) Ls.push(U.oVerHow, '', versioncheck.value.trim(), '')
   }
 
-  // 候補にないCWEを直接入力した場合は、その内容を使う（改行は空白にする）
   const cweVal = cwe.value === CWE_OTHER ? cweOther.value.trim().replace(/\s*\n\s*/g, ' ') : cwe.value.trim()
   if (desc.value.trim() || cweVal) {
     Ls.push(`## ${U.oDesc}`, '')
@@ -197,7 +218,6 @@ const markdownOutput = computed(() => {
     Ls.push(`## ${U.oImp}`, '')
     if (impact.value.trim()) Ls.push(impact.value.trim(), '')
     if (score.value.trim()) {
-      // 表記のバージョンは、ベクターに合わせる（v3.0 のベクターなら v3.0）
       const ver = cvssSummary(vector.value)?.version ?? '3.1'
       Ls.push(L.ui.fCvss.replace('v3.1', 'v' + ver).replace('{n}', score.value.trim()).replace('{s}', sevName))
     }
@@ -228,6 +248,7 @@ const markdownOutput = computed(() => {
   return Ls.join('\n').replace(/\n+$/, '\n')
 })
 
+// OutputPanel に渡す OutputTab 定義（CSAF 2.0 JSON とバリデーション警告を組み込み）
 const tabs = computed<OutputTab[]>(() => [
   {
     id: 'markdown',
@@ -237,26 +258,12 @@ const tabs = computed<OutputTab[]>(() => [
     mime: 'text/markdown;charset=utf-8'
   },
   {
-    id: 'json',
-    label: 'JSON',
-    content: JSON.stringify({
-      status: status.value,
-      title: title.value,
-      aid: aid.value,
-      cve: cve.value,
-      pub: pub.value,
-      summary: summary.value,
-      prods: prods.value,
-      cwe: cwe.value,
-      desc: desc.value,
-      impact: impact.value,
-      score: score.value,
-      vector: vector.value,
-      fix: fix.value,
-      work: work.value
-    }, null, 2),
+    id: 'csaf',
+    label: 'CSAF 2.0 (JSON)',
+    content: JSON.stringify(buildCsaf(formObject.value), null, 2),
     ext: '.json',
-    mime: 'application/json;charset=utf-8'
+    mime: 'application/json;charset=utf-8',
+    warnings: csafWarnings(formObject.value)
   }
 ])
 </script>
@@ -289,6 +296,18 @@ const tabs = computed<OutputTab[]>(() => [
           <label>{{ L.ui.tl.split('|')[0] }}</label>
           <p class="hint">{{ L.ui.tl.split('|')[1] }}</p>
           <input type="text" v-model="title" :placeholder="L.ui.tph" />
+        </div>
+
+        <!-- CSAF 発行者情報（組織名・URL） -->
+        <div class="row">
+          <div>
+            <label>発行者名（組織名・PSIRT名）</label>
+            <input type="text" v-model="publisherName" placeholder="例：株式会社サンプル PSIRT" />
+          </div>
+          <div>
+            <label>発行者URL（Namespace）</label>
+            <input type="url" v-model="publisherNamespace" placeholder="https://example.co.jp" />
+          </div>
         </div>
 
         <!-- 管理番号・CVE -->
@@ -404,7 +423,7 @@ const tabs = computed<OutputTab[]>(() => [
           <textarea v-model="desc" rows="4" placeholder="脆弱性の詳細な説明..."></textarea>
         </div>
 
-        <!-- 脅威（Impact） + プリセットボタン（被害シナリオ別） -->
+        <!-- 脅威（Impact） + プリセットボタン -->
         <div>
           <div class="label-bar">
             <label>{{ L.ui.impl.split('|')[0] }}</label>
@@ -438,7 +457,7 @@ const tabs = computed<OutputTab[]>(() => [
           <input type="text" v-model="vector" placeholder="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" />
         </div>
 
-        <!-- ▼ 項目を選んでスコアを計算する機能（CvssPicker再導入） -->
+        <!-- CVSS計算ピッカー -->
         <details>
           <summary>{{ L.ui.cvsss || '項目を選んでスコアを計算する（各項目に説明があります）' }}</summary>
           <CvssPicker v-model="vector" />
