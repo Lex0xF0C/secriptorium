@@ -48,7 +48,7 @@ export function emptyVexForm(): VexForm {
   }
 }
 
-const T = (s: string) => s.trim()
+const T = (s: unknown) => (typeof s === 'string' ? s.trim() : String(s || '').trim())
 const lines = (s: string) => T(s).split('\n').map(T).filter(Boolean)
 
 /** CSAF VEX バリデーション警告 */
@@ -135,7 +135,7 @@ export function toVexTsv(products: VexProduct[]): string {
 
   const header = '製品名\tバージョン\tステータス\t影響なし理由\t補足メモ'
   const rows = products
-    .filter((p) => p.name.trim() || p.version.trim())
+    .filter((p) => T(p.name) || T(p.version))
     .map((p) => [
       p.name,
       p.version,
