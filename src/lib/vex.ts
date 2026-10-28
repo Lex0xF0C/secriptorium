@@ -1,6 +1,7 @@
 // src/lib/vex.ts
 
 import { cveList, cveOk } from './advisory'
+import { I18N_JA } from './i18n-ja'
 
 export type VexStatus = 'known_not_affected' | 'known_affected' | 'fixed' | 'under_investigation'
 
@@ -134,12 +135,22 @@ export function parseVexProducts(text: string): { products: VexProduct[]; warnin
 
 /** 現在の製品リストを Excel 貼り付け用 TSV 文字列に変換 */
 export function toVexTsv(products: VexProduct[]): string {
-  const statusJA: Record<VexStatus, string> = {
-    known_not_affected: '影響なし',
-    known_affected: '影響あり',
-    fixed: '修正済み',
-    under_investigation: '調査中'
-  }
+  const statusJA = I18N_JA.vex.status
+  const justJA = I18N_JA.vex.justification
+
+  const header = '製品名\tバージョン\tステータス\t影響なし理由\t補足メモ'
+  const rows = products
+    .filter((p) => p.name.trim() || p.version.trim())
+    .map((p) => [
+      p.name,
+      p.version,
+      statusJA[p.status] || p.status,
+      p.status === 'known_not_affected' ? (justJA[p.justification] || p.justification) : '',
+      p.detail
+    ].join('\t'))
+
+  return [header, ...rows].join('\n')
+}
 
   const justJA: Record<string, string> = {
     vulnerable_code_not_present: '該当コード未搭載',
