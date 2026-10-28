@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { I18N_JA } from '../lib/i18n-ja'
 import OutputPanel from '../components/OutputPanel.vue'
 import type { OutputTab } from '../lib/output'
-import { I18N_JA } from '../lib/i18n-ja'
 import {
   buildCsafVex,
   vexWarnings,
@@ -13,23 +13,22 @@ import {
   type VexStatus
 } from '../lib/vex'
 
+const L = I18N_JA
+
 // 入力モード切替 ('form' | 'paste')
 const inputMode = ref<'form' | 'paste'>('form')
 
-// テンプレートで L.vex を使うために代入が必要
-const L = I18N_JA
-  
-// フォーム入力状態 (メモリ内管理)
+// フォーム入力状態
 const cve = ref('')
 const aid = ref('')
 const publisherName = ref('')
 const publisherNamespace = ref('')
-const pub = ref(new Date().toISOString().split('T')[0])
+const pub = ref(new Date().toISOString().split('T'))
 const summary = ref('')
 const refs = ref('')
 const contact = ref('')
 
-// TSV貼り付け用エリアとメッセージ
+// TSV貼り付け用エリアとトースト状態
 const pasteText = ref('')
 const pasteNotes = ref<string[]>([])
 const toastMsg = ref('')
@@ -61,6 +60,30 @@ const removeProd = (idx: number) => {
   if (prods.value.length === 0) addProd()
 }
 
+// ★ 未定義だった「見出し行コピー関数」を定義
+const copyTemplateHeader = async () => {
+  const header = '製品名\tバージョン\tステータス\t影響なし理由\t補足メモ\n'
+  try {
+    await navigator.clipboard.writeText(header)
+    showToast(L?.ui?.copiedTsv || '見出し行をコピーしました')
+  } catch {
+    // クリップボード API 制限時のフォールバック処理
+    try {
+      const textarea = document.createElement('textarea')
+      textarea.value = header
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+      showToast(L?.ui?.copiedTsv || '見出し行をコピーしました')
+    } catch {
+      showToast(L?.ui?.copyfail || 'コピーできませんでした')
+    }
+  }
+}
+
 // コピペ一括読み込みハンドラ ('append': 一括追加, 'replace': 上書き)
 const handleImportPaste = (mode: 'append' | 'replace') => {
   if (!pasteText.value.trim()) {
@@ -77,8 +100,7 @@ const handleImportPaste = (mode: 'append' | 'replace') => {
     prods.value = result.products
     pasteNotes.value = [`${result.products.length} 件の製品データで上書きしました`]
   } else {
-    // 空の初期行が1件だけの場合は置き換え
-    if (prods.value.length === 1 && !prods.value[0].name && !prods.value[0].version) {
+    if (prods.value.length === 1 && !prods.value.name && !prods.value.version) {
       prods.value = result.products
     } else {
       prods.value.push(...result.products)
@@ -89,19 +111,17 @@ const handleImportPaste = (mode: 'append' | 'replace') => {
   showToast('データを読み込みました')
 }
 
-// 現在の表データをTSVテキストエリアに出力
 const handleExportToPasteArea = () => {
   pasteText.value = toVexTsv(prods.value)
   showToast('現在の表データをテキストエリアに出力しました')
 }
-
 // クリップボードへコピー
 const handleCopyTsv = async () => {
   try {
     await navigator.clipboard.writeText(toVexTsv(prods.value))
-    showToast('Excel用の表データをコピーしました')
+    showToast(L?.ui?.copied || 'コピーしました')
   } catch {
-    showToast('コピーできませんでした')
+    showToast(L?.ui?.copyfail || 'コピーできませんでした')
   }
 }
 
@@ -138,18 +158,13 @@ const markdownOutput = computed(() => {
   Ls.push('| 製品名 | バージョン | ステータス | 影響なし理由 / 補足 |')
   Ls.push('| --- | --- | --- | --- |')
 
-  const statusLabel: Record<VexStatus, string> = {
-    known_not_affected: '影響なし (Not Affected)',
-    known_affected: '影響あり (Affected)',
-    fixed: '修正済み (Fixed)',
-    under_investigation: '調査中 (Under Investigation)'
-  }
+  const statusLabel = L?.vex?.status || {}
 
   prods.value.forEach((p) => {
     if (p.name || p.version) {
-      const justText = p.status === 'known_not_affected' ? p.justification : ''
+      const justText = p.status === 'known_not_affected' ? (L?.vex?.justification?.[p.justification] || p.justification) : ''
       const note = [justText, p.detail].filter(Boolean).join(' - ')
-      Ls.push(`| ${p.name || '-'} | ${p.version || '-'} | ${statusLabel[p.status]} | ${note || '-'} |`)
+      Ls.push(`| ${p.name || '-'} | ${p.version || '-'} | ${statusLabel[p.status] || p.status} | ${note || '-'} |`)
     }
   })
 
