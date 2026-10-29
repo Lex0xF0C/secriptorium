@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { I18N_JA } from '../lib/i18n-ja'
 import { generateCvdPolicy, type CvdPolicyForm } from '../lib/cvd-policy'
+import OutputPanel from '../components/OutputPanel.vue'
+import type { OutputTab } from '../lib/output'
 
 const ui = I18N_JA.cvdUi || {}
 const fields = I18N_JA.cvdFields || {}
@@ -17,74 +19,78 @@ const form = ref<CvdPolicyForm>({
   acknowledgments: ''
 })
 
-const markdownOutput = ref<string>(generateCvdPolicy(form.value))
+const markdownOutput = computed<string>(() => generateCvdPolicy(form.value))
 
-const updateOutput = () => {
-  markdownOutput.value = generateCvdPolicy(form.value)
-}
-
-const copyToClipboard = async () => {
-  try {
-    await navigator.clipboard.writeText(markdownOutput.value)
-    alert(ui.copiedCvd || 'コピーしました')
-  } catch (e) {
-    alert('コピーに失敗しました')
+// OutputPanel に渡すためのタブ定義（他のモードと統一）
+const tabs = computed<OutputTab[]>(() => [
+  {
+    id: 'md',
+    label: 'Markdown',
+    content: markdownOutput.value,
+    ext: '.md',
+    mime: 'text/markdown;charset=utf-8',
   }
-}
-
-const downloadMarkdown = () => {
-  const blob = new Blob([markdownOutput.value], { type: 'text/markdown;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = 'cvd-policy.md'
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
-}
+])
 </script>
 
 <template>
-  <div class="cvd-mode">
-    <h2>{{ ui.cvdTitle || 'CVDポリシー作成ツール' }}</h2>
-    <p class="subtitle">{{ ui.cvdSubtitle }}</p>
+  <main class="cols">
+    <!-- 左側：入力フォームパネル -->
+    <section class="panel" aria-label="CVDポリシー入力フォーム">
+      <h2>{{ ui.cvdTitle || 'CVDポリシー作成ツール' }}</h2>
+      <p class="sub-intro">{{ ui.cvdSubtitle }}</p>
 
-    <div class="container">
-      <!-- 入力フォーム -->
-      <div class="form-section" @input="updateOutput">
-        <div class="field" v-for="(desc, key) in fields" :key="key">
-          <label>{{ desc.split('|')[0] }}</label>
-          <span class="hint">{{ desc.split('|')[1] }}</span>
-          <template v-if="key === 'orgName' || key === 'contactEmail'">
-            <input type="text" v-model="form[key as keyof CvdPolicyForm]" :placeholder="desc.split('|')[1]" />
-          </template>
-          <template v-else>
-            <textarea v-model="form[key as keyof CvdPolicyForm]" rows="3" :placeholder="desc.split('|')[1]"></textarea>
-          </template>
-        </div>
+      <div class="row">
+        <label>{{ fields.orgName?.split('|')[0] || '組織名・企業名' }}
+          <span class="hint">{{ fields.orgName?.split('|')[1] }}</span>
+          <input type="text" v-model="form.orgName" placeholder="例: 株式会社〇〇" />
+        </label>
+        <label>{{ fields.contactEmail?.split('|')[0] || '報告用メールアドレス' }}
+          <span class="hint">{{ fields.contactEmail?.split('|')[1] }}</span>
+          <input type="text" v-model="form.contactEmail" placeholder="security@example.com" />
+        </label>
       </div>
 
-      <!-- プレビュー・出力エリア -->
-      <div class="preview-section">
-        <div class="actions">
-          <button type="button" @click="copyToClipboard">{{ ui.copyCvd || '📋 コピー' }}</button>
-          <button type="button" @click="downloadMarkdown">{{ ui.dlCvd || '💾 保存' }}</button>
-        </div>
-        <pre class="preview-box"><code>{{ markdownOutput }}</code></pre>
-      </div>
-    </div>
-  </div>
+      <label>{{ fields.scope?.split('|')[0] || '適用範囲 (Scope)' }}
+        <span class="hint">{{ fields.scope?.split('|')[1] }}</span>
+        <textarea v-model="form.scope" rows="3" placeholder="本ポリシーの対象となる製品、サービス、ドメインなど"></textarea>
+      </label>
+
+      <label>{{ fields.reporting?.split('|')[0] || '脆弱性の報告方法 (Reporting)' }}
+        <span class="hint">{{ fields.reporting?.split('|')[1] }}</span>
+        <textarea v-model="form.reporting" rows="3" placeholder="報告時に含めてほしい情報や暗号化(PGP)の案内など"></textarea>
+      </label>
+
+      <label>{{ fields.safeHarbor?.split('|')[0] || 'セーフハーバー (Safe Harbor)' }}
+        <span class="hint">{{ fields.safeHarbor?.split('|')[1] }}</span>
+        <textarea v-model="form.safeHarbor" rows="3" placeholder="善意で行われたセキュリティ調査に対する法的免責の明示"></textarea>
+      </label>
+
+      <label>{{ fields.timeline?.split('|')[0] || '対応のタイムフレーム (Timeline)' }}
+        <span class="hint">{{ fields.timeline?.split('|')[1] }}</span>
+        <textarea v-model="form.timeline" rows="2" placeholder="初動の受領確認（例: 24〜48時間以内）や初期評価の目安"></textarea>
+      </label>
+
+      <label>{{ fields.preferences?.split('|')[0] || '開示の調整とエンバーゴ (Preferences)' }}
+        <span class="hint">{{ fields.preferences?.split('|')[1] }}</span>
+        <textarea v-model="form.preferences" rows="2" placeholder="修正プログラム公開までの調整ルールや非公開期間"></textarea>
+      </label>
+
+      <label>{{ fields.acknowledgments?.split('|')[0] || '謝辞 (Acknowledgments)' }}
+        <span class="hint">{{ fields.acknowledgments?.split('|')[1] }}</span>
+        <textarea v-model="form.acknowledgments" rows="2" placeholder="発見者への謝辞掲載方針やクレジット表記に関する条件"></textarea>
+      </label>
+    </section>
+
+    <!-- 右側：共通 OutputPanel によるリアルタイムプレビュー＆保存出力 -->
+    <OutputPanel class="out" :tabs="tabs" base-name="cvd-policy" />
+  </main>
 </template>
 
 <style scoped>
-.cvd-mode { padding: 1rem; }
-.subtitle { margin-bottom: 1.5rem; color: #555; }
-.container { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-.field { margin-bottom: 1rem; display: flex; flex-direction: column; }
-.field label { font-weight: bold; margin-bottom: 0.2rem; }
-.hint { font-size: 0.85rem; color: #666; margin-bottom: 0.4rem; }
-.field input, .field textarea { padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; }
-.actions { margin-bottom: 0.8rem; display: flex; gap: 0.5rem; }
-.preview-box { background: #f4f4f4; padding: 1rem; border-radius: 4px; max-height: 650px; overflow-y: auto; white-space: pre-wrap; font-family: monospace; font-size: 0.9rem; }
+.sub-intro {
+  margin: 0 0 16px;
+  color: var(--sub);
+  font-size: 0.9rem;
+}
 </style>
