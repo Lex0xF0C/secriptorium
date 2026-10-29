@@ -4,8 +4,8 @@ import AdvisoryMode from './modes/AdvisoryMode.vue'
 import SbomMode from './modes/SbomMode.vue'
 import VexMode from './modes/VexMode.vue' 
 import CvssCalculatorMode from './modes/CvssCalculatorMode.vue'
-
-type ModeKey = 'advisory' | 'sbom' | 'cvss'
+import SecurityTxtMode from './modes/SecurityTxtMode.vue'
+type ModeKey = 'advisory' | 'sbom' | 'cvss' | 'securitytxt'
 
 interface ModeItem {
   key: ModeKey
@@ -22,6 +22,7 @@ const modes: ModeItem[] = [
   { key: 'vex', label: '製品ポートフォリオ VEX (CSAF VEX)', component: VexMode, enabled: true }, 
   { key: 'sbom', label: 'SBOM / VEX', component: SbomMode, enabled: true },
   { key: 'cvss', label: 'CVSS v3.x 計算機', component: CvssCalculatorMode, enabled: true },
+  { key: 'securitytxt', label: 'security.txt 作成', component: SecurityTxtMode, enabled: true },
 ]
 
 const switchMode = (mode: ModeItem) => {
