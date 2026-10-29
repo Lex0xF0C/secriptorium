@@ -14,201 +14,196 @@
 
 ## 日本語
 
-脆弱性情報の公表・提出を支援する、ブラウザだけで動く小さなツールです。**アドバイザリ作成**（Markdown）、**CVSS v3.x の計算**、**SBOM / VEX の作成支援**（CycloneDX JSON）に対応しています。CSAF 2.0 の出力は、将来の改善構想です。
+脆弱性情報の公表・開示プロセスを包括的に支援する、ブラウザだけで動く静的Webツールです。**アドバイザリ作成**（Markdown / CSAF 2.0）、**CVSS v3.x 計算**、**SBOM / VEX 作成**（CycloneDX JSON / CSAF VEX）、**security.txt（RFC 9116）生成**、**CVDポリシー作成**に対応しています。
 
 入力内容はこのブラウザの中だけで処理され、外部へ送信されません。サーバーもデータベースもありません。
 
 ### 現在できること
 
-- アドバイザリの入力フォーム（タイトル、概要、影響を受ける製品、CWE、脅威、対策、回避策、連絡先など）
-- CVSS v3.0 / v3.1 の基本スコアと深刻度を自動計算（ベクターの貼り付け、または項目ごとの説明つき選択式）
-- Markdown 出力（自社サイトへの掲載用）
-- CVSS v3.x のグラフィカルな計算機（シナリオ別のプリセットつき）
-- コピー、およびファイルへの保存
-- SBOM / VEX の作成支援：Excel からの貼り付け、PURL の自動生成、CycloneDX 1.6 の JSON を SBOM と VEX の別の文書で出力、1クリックのデモ、入力チェック
+- **脆弱性アドバイザリ作成**
+  - 入力フォーム（タイトル、発行者名・URL、管理番号、CVE、概要、影響を受ける製品、CWE、脅威、対策、回避策、連絡先など）
+  - 定型文プリセット（概要、検証手順、説明、脅威、対策、回避策、謝辞、連絡先）のワンタップ挿入
+  - CWE選択連動（選択時に説明と脅威の定型文を自動挿入）
+  - **Markdown**（WEB掲載用）および **CSAF 2.0 JSON** のリアルタイム同時出力（CSAF構造警告チェック機能つき）
+- **CVSS v3.x グラフィカル計算機**
+  - CVSS v3.0 / v3.1 の基本スコアと深刻度を自動計算（ベクター貼り付け、または項目ごとの説明つきグラフィカル選択）
+  - よくある脆弱性シナリオ（RCE、XSS/フィッシング、LAN限定、ローカル管理者権限等）の即時適用プリセット
+  - Markdown および JSON 形式での評価結果出力
+- **SBOM / VEX 作成支援**
+  - Excel/TSV からのコピー＆ペースト一括読み込み、表の編集・TSVコピー
+  - PURL の自動生成
+  - **CycloneDX 1.6 JSON**（SBOM・VEX）および **CSAF 2.0 VEX JSON** の出力
+  - 必須項目チェックおよびバリデーション警告表示、1クリックのデモデータ読み込み
+- **security.txt (RFC 9116) 生成**
+  - 連絡先、有効期限（ISO 8601）、暗号化キー、謝辞、推奨言語、ポリシ一等の安全なテキスト生成
+  - クリップボードコピーおよび `.txt` ダウンロード機能
+- **CVD（協調的脆弱性開示）ポリシー作成**
+  - ISO/IEC 29147 や ENISA ガイドラインに準拠したポリシー作成（Scope, Reporting, Safe Harbor, Timeline, Preferences 等）
+  - Markdown 形式での出力およびダウンロード
 
 ### 今後の予定
 
-- アドバイザリモードへの CSAF 2.0（JSON）出力の追加（発行者名・発行者のURLの入力欄も、あわせて追加する）
-- SBOM / VEX の拡充（ライセンス、ハッシュ、依存関係、取引先向けの説明文書など）
-- 日英の表示切り替え、定型文、公開前チェックなど（別リポジトリ [lite-advisory-maker](https://github.com/Lex0xF0C/lite-advisory-maker) の機能の移植）
+- CSAF 2.0 / CycloneDX バリデーション機能の更なる強化
+- SBOM / VEX の拡充（ライセンス、ハッシュ、依存関係グラフの視覚化など）
+- 国際化（日英表示切り替え）の完全対応
 
 ### 出力についての注意
 
 **Markdown**
 
 - Markdown 記法（`#`、`*`、`-`、`>`、`` ``` `` など）を入力すると、出力にそのまま反映されます。
-- 管理番号・製品名・バージョンは表として出力されます。`|` は自動でエスケープされ、改行は空白になります。それ以外の記法は表の中でも有効です。
-- タイトルは1行の項目です。改行は空白として扱われます。
-- HTML タグは入力のまま出力され、表示は掲載先の Markdown レンダラに依存します。本ツールの画面上では、HTML として解釈されません。
+- 管理番号・製品名・バージョンは表として出力されます。`|` は自動でエスケープされ、改行は空白になります。
+- HTML タグは入力のまま出力され、表示は掲載先の Markdown レンダラに依存します。本ツールの画面上では HTML として解釈されません。
+
+**CSAF 2.0 (JSON)**
+
+- アドバイザリモードおよび VEX モードから CSAF 2.0 準拠の JSON を生成します。出力内容が厳密に規格へ適合しているかは、**公式の検証ツール（Secvisogram 等）で必ず最終確認を行ってください。**
 
 **CVSS**
 
-- CVSS 4.0 は、現在は使えません。将来 CSAF 2.0 の出力を付ける場合、CSAF 2.0 が 4.0 に対応していないためです（CSAF 2.1 で対応予定のため、対応後に検討します）。
+- CVSS v4.0 は、現在は使えません。CSAF 2.0 規格が CVSS v4.0 に未対応のためです（CSAF 2.1 での対応に合わせて検討します）。
 
-**CSAF 2.0（将来の予定）**
+**SBOM / VEX (CycloneDX / CSAF)**
 
-- CSAF 2.0 の出力は、現在、アドバイザリモードにありません。付ける場合は、出力が規格に完全に適合しているかどうかを、**公式の検証ツール（Secvisogram など）で必ず確認してください。**
-
-**SBOM / VEX（CycloneDX）**
-
-- 出力は CycloneDX 1.6 の JSON です。規格に完全に適合しているかどうかは、**公式の検証ツールで必ず確認してください。**
-- SBOM と VEX は、別々の文書です。VEX は、bom-link（`urn:cdx:<SBOMのシリアル番号>/1#<bom-ref>`）で、SBOM の部品を指します。
-- PURL は、エコシステムと名前から自動生成します。パッケージ管理の部品以外は `generic` です。誤った識別子を出さないため、エコシステムを推測しません。maven は「groupId:artifactId」の形で入力します。
-- バージョンなどの値を、補って埋めることはしません。空欄は空欄のまま出力され、チェックで知らせます。
-- 依存関係は、製品から各部品への1段だけです。ライセンスとハッシュには、まだ対応していません。
-- 貼り付けは、1回あたり20万文字・2000行までです（超えた分は読み取りません）。
-- 部品の表は、Excel 用の TSV としてコピーでき、次回、そのまま貼り戻せます（JSON の読み込みは設けていません）。
-- 「影響なし」などの VEX の判定は、製品の提供者が、自分の責任で行うものです。本ツールは、判定の正しさを確認しません。
-- デモは架空の機器の例です。CVE の内容は例示であり、使う前に NVD などで確認してください。デモ由来の出力には、サンプルである旨の印が付きます。
+- 出力は CycloneDX 1.6 JSON または CSAF 2.0 VEX JSON です。
+- SBOM と VEX は別々の文書として構成され、VEX は bom-link（`urn:cdx:<SBOMシリアル番号>/1#<bom-ref>`）等で部品を参照します。
+- PURL はエコシステムと名前から自動生成します。パッケージ管理以外の部品は `generic` となります。誤判定を防ぐため自動推測は行いません（Maven は `groupId:artifactId` で入力）。
+- 貼り付けは 1 回あたり 20 万文字・2000 行まで対応しています。
+- 「影響なし」などの VEX 判定は、製品提供者が自身の責任で行うものです。本ツールは判定の正当性を自動検証しません。
 
 **共通**
 
-- **公開前に必ず、掲載先での表示結果、または検証ツールの結果を確認してください。**
+- **公開前に必ず、掲載先での表示結果および検証ツールの結果を確認してください。**
 
 ### 免責
 
 CVSS は FIRST.Org, Inc. が所有・管理する規格です（条件のもとで使用しています）。
 
-本ツールは文書づくりの補助です。公開の可否、内容の正確性、CVSS 評価の妥当性は、利用者が判断してください。公開前に、社内（法務・広報など）の確認を受けることを推奨します。
+本ツールは文書作成およびフォーマット変換の補助ツールです。公表の可否、記載内容の正確性、CVSS 評価の妥当性は利用者が判断してください。公開前に、社内（法務・広報・PSIRT等）の確認を受けることを推奨します。
 
 ### 開発とデプロイ
 
-Vite + Vue 3 + TypeScript で作られています。ビルドと GitHub Pages への公開は、GitHub Actions が自動で行います（`.github/workflows/deploy.yml`）。
+Vite + Vue 3 + TypeScript で構築されています。ビルドと GitHub Pages へのデプロイは GitHub Actions が自動で行います（`.github/workflows/deploy.yml`）。
 
-1. リポジトリの Settings → Pages で、Source を「GitHub Actions」にします。
-2. `main` ブランチに push すると、自動でビルドと公開が行われます。
-3. 公開 URL は、Actions の実行結果と、Settings → Pages に表示されます。
+1. リポジトリの Settings → Pages で、Source を「GitHub Actions」に設定します。
+2. `main` ブランチに push すると、自動でビルドとデプロイが実行されます。
+3. 公開 URL は Actions の実行結果および Settings → Pages に表示されます。
 
-`vite.config.ts` の `base` は、リポジトリ名から自動で決まります。リポジトリ名を変えても、設定を直す必要はありません。
+`vite.config.ts` の `base` はリポジトリ名から自動取得されるため、リポジトリ名を変更しても設定の変更は不要です。
 
 ### ファイル構成
 
 | パス | 役割 |
 | --- | --- |
-| `index.html` | 入口（CSP の設定を含む） |
-| `src/main.ts` | アプリの起動 |
-| `src/App.vue` | 全体の枠組みとモードの切り替え |
-| `src/modes/AdvisoryMode.vue` | アドバイザリ作成モードの画面 |
-| `src/modes/CvssCalculatorMode.vue` | CVSS v3.x 計算機モードの画面 |
-| `src/modes/SbomMode.vue` | SBOM / VEX 作成モードの画面 |
-| `src/components/OutputPanel.vue` | 出力パネル（タブ、コピー、保存）。モード間で共用 |
-| `src/components/CvssPicker.vue` | CVSS の項目選択（説明つき）とスコア計算の画面部品 |
-| `src/lib/cvss.ts` | CVSS v3.0 / v3.1 の計算と、項目の定義・説明文（Vue に依存しない） |
-| `src/lib/advisory.ts` | フォームの型、Markdown と CSAF の生成（Vue に依存しない。CSAF の生成は、将来の出力用に残してある） |
-| `src/lib/i18n-ja.ts` | アドバイザリモードの日本語の文言、定型文、CWE の例文 |
-| `src/lib/sbom.ts` | SBOM / VEX の型、貼り付けの解析、PURL、CycloneDX の生成、チェック、デモ（Vue に依存しない） |
-| `src/lib/output.ts` | 出力パネルに渡すデータの型 |
-| `src/style.css` | 見た目（ダークモード対応） |
+| `index.html` | アプリの入口（厳格な CSP 設定を含む） |
+| `src/main.ts` | アプリのエントリーポイント |
+| `src/App.vue` | アプリ全体のレイアウトと各モードの切り替え |
+| `src/modes/AdvisoryMode.vue` | アドバイザリ作成モード画面 |
+| `src/modes/CvssCalculatorMode.vue` | CVSS v3.x 計算機モード画面 |
+| `src/modes/SbomMode.vue` | SBOM / CycloneDX VEX 作成モード画面 |
+| `src/modes/VexMode.vue` | CSAF 2.0 VEX 専用作成モード画面 |
+| `src/modes/SecurityTxtMode.vue` | security.txt (RFC 9116) 作成モード画面 |
+| `src/modes/CvdPolicyMode.vue` | CVD ポリシー作成モード画面 |
+| `src/components/OutputPanel.vue` | 共通出力パネル（タブ切替、コピー、保存、警告表示） |
+| `src/components/CvssPicker.vue` | CVSS 評価ピッカー（説明付き選択画面部品） |
+| `src/lib/cvss.ts` | CVSS v3.0 / v3.1 計算ロジック・メトリック定義 |
+| `src/lib/advisory.ts` | アドバイザリデータ構造、Markdown & CSAF 2.0 生成・警告チェック |
+| `src/lib/sbom.ts` | SBOM / CycloneDX VEX の型定義、TSVパース、PURL生成、CycloneDX出力 |
+| `src/lib/vex.ts` | CSAF 2.0 VEX 用の型定義、TSVパース、JSON生成・警告チェック |
+| `src/lib/security-txt.ts` | security.txt (RFC 9116) フォーマット生成 |
+| `src/lib/cvd-policy.ts` | CVD ポリシー Markdown フォーマット生成 |
+| `src/lib/i18n-ja.ts` | UI文言、定型文プリセット、CWE例文、多言語辞書定義 |
+| `src/lib/output.ts` | OutputPanel 用の型定義 |
+| `src/style.css` | 全体スタイル（ダークモード対応・レスポンシブ） |
 
 ### セキュリティ方針
 
-- ネットワーク通信なし（CSP で `connect-src 'none'`）
-- `v-html` と `innerHTML` を使用しない
-- 外部スクリプト・外部 CSS・CDN を使用しない
-- 実行時の依存は Vue のみ
+- 外部ネットワーク通信なし（CSP で `connect-src 'none'` を指定）
+- `v-html` および `innerHTML` の不使用
+- 外部スクリプト・外部 CSS・外部 CDN の非使用
+- 実行時依存パッケージは Vue のみ
 
-不具合や脆弱性を見つけた場合は、Issue でお知らせください。
+不具合や脆弱性を見つけた場合は、GitHub Issue よりお知らせください。
 
 ---
 
 ## English
 
-A small browser-only tool that helps you publish and submit vulnerability information. It supports **advisory writing** (Markdown), **CVSS v3.x calculation** and **SBOM / VEX authoring** (CycloneDX JSON). CSAF 2.0 output is a planned improvement.
+A client-side web utility designed to streamline the vulnerability management and disclosure process. It supports **advisory authoring** (Markdown / CSAF 2.0), **CVSS v3.x calculation**, **SBOM / VEX authoring** (CycloneDX JSON / CSAF VEX), **security.txt (RFC 9116) generation**, and **CVD policy creation**.
 
-Everything you enter is processed in your browser and is never sent anywhere. There is no server and no database.
+Everything you enter is processed locally in your browser and is never transmitted to any external server. There is no backend and no database.
 
-### What it does today
+### Features
 
-- Advisory form (title, overview, affected products, CWE, threat, countermeasure, workaround, contact, etc.)
-- Automatic CVSS v3.0 / v3.1 base score and severity (paste a vector, or pick each metric with explanations)
-- Markdown output (for your website)
-- Graphical CVSS v3.x calculator (with scenario presets)
-- Copy and save to file
-- SBOM / VEX authoring: paste from Excel, automatic PURL generation, CycloneDX 1.6 JSON output with SBOM and VEX as separate documents, one-click demo, input checks
+- **Vulnerability Advisory Authoring**
+  - Rich form inputs (title, publisher details, advisory ID, CVE, summary, affected products, CWE, impact, fix, workaround, contact, etc.)
+  - One-click presets for standard phrasing across all major sections
+  - Automatic insertion of CWE descriptions and impact templates
+  - Simultaneous real-time generation of **Markdown** (for web publishing) and **CSAF 2.0 JSON** (with built-in structural validation warnings)
+- **Graphical CVSS v3.x Calculator**
+  - Base score and severity calculations for CVSS v3.0 / v3.1
+  - Preset cards for common attack scenarios (RCE, XSS, LAN-only, Local Admin, etc.)
+  - Export assessment results in Markdown and JSON formats
+- **SBOM / VEX Authoring**
+  - Bulk copy-paste import/export for Excel and TSV data
+  - Automatic PURL generation
+  - Export as **CycloneDX 1.6 JSON** (SBOM & VEX) or **CSAF 2.0 VEX JSON**
+  - Validation check warnings and 1-click sample demo loading
+- **security.txt (RFC 9116) Generator**
+  - Generate compliant security.txt files with Contact, Expires (ISO 8601), Encryption, Acknowledgments, Preferred-Languages, and Policy fields
+  - Direct clipboard copy and `.txt` file download
+- **Coordinated Vulnerability Disclosure (CVD) Policy Generator**
+  - Standardized CVD policy templates aligned with ISO/IEC 29147 and ENISA guidelines (Scope, Safe Harbor, Timeline, Preferences, etc.)
+  - Export in Markdown format
 
-### Planned
+### Planned Enhancements
 
-- CSAF 2.0 (JSON) output in advisory mode (together with input fields for the publisher name and URL)
-- More SBOM / VEX features (licenses, hashes, dependency graph, customer-facing explanation document, etc.)
-- Japanese/English UI, presets and pre-publication checks (porting features from [lite-advisory-maker](https://github.com/Lex0xF0C/lite-advisory-maker))
+- Enhanced validation checks against CSAF 2.0 and CycloneDX schemas
+- Extended SBOM / VEX features (license details, hashes, visual dependency graphs)
+- Full multi-language (EN/JA) UI switching
 
-### Notes on output
+### Notes on Output
 
 **Markdown**
 
-- Markdown syntax (`#`, `*`, `-`, `>`, `` ``` ``, etc.) typed into the form is passed through as-is.
-- Advisory ID, product names and versions are output as a table. `|` is escaped automatically and line breaks become spaces; other syntax still takes effect inside table cells.
-- The title is a single-line field; line breaks are converted to spaces.
-- HTML tags are output as typed; how they are displayed depends on the Markdown renderer of your publishing site. This tool's own screen does not interpret them as HTML.
+- Markdown syntax typed into form fields is passed through directly.
+- Advisory IDs, product names, and versions are output as formatted tables with proper escaping.
+
+**CSAF 2.0 (JSON)**
+
+- Advisory and VEX modes export CSAF 2.0 compliant JSON. **Always validate the generated JSON using an official validator (e.g., Secvisogram) before official publication.**
 
 **CVSS**
 
-- CVSS 4.0 is not available. If CSAF 2.0 output is added later, note that CSAF 2.0 does not support CVSS 4.0 (it is expected in CSAF 2.1; to be considered then).
+- CVSS v4.0 is currently not supported due to CSAF 2.0 specification constraints (planned for evaluation with CSAF 2.1).
 
-**CSAF 2.0 (planned)**
+**SBOM / VEX (CycloneDX / CSAF)**
 
-- CSAF 2.0 output is not currently available in advisory mode. When it is added, **always validate the output with an official validator (e.g., Secvisogram)**.
-
-**SBOM / VEX (CycloneDX)**
-
-- The output is CycloneDX 1.6 JSON. **Always validate it with an official validator**; conformance is not guaranteed.
-- SBOM and VEX are separate documents. The VEX points to SBOM components with a bom-link (`urn:cdx:<SBOM serial number>/1#<bom-ref>`).
-- PURLs are generated from the ecosystem and the name. Anything not from a package manager is `generic`. The tool never guesses the ecosystem, to avoid emitting wrong identifiers. Enter Maven components as "groupId:artifactId".
-- Missing values (such as a version) are never filled in; they stay empty and are flagged by the checks.
-- Dependencies are recorded one level only (product to each component). Licenses and hashes are not supported yet.
-- Pasted text is limited to 200,000 characters and 2,000 rows per paste (the rest is ignored).
-- The component table can be copied as TSV for Excel and pasted back next time (there is no JSON import).
-- VEX judgements such as "not affected" are made by the product supplier, at their own responsibility. The tool does not verify them.
-- The demo is a fictional device. CVE details are examples; check them against NVD or similar before use. Output derived from the demo carries a sample marker.
-
-**General**
-
-- **Always check the rendered result on your publishing site, or the validator output, before publishing.**
+- Outputs CycloneDX 1.6 JSON or CSAF 2.0 VEX JSON.
+- SBOM and VEX are maintained as distinct documents; VEX links to SBOM components via `bom-link` (`urn:cdx:<serial>/1#<ref>`).
+- VEX judgments (e.g., "not affected") are the sole responsibility of the product supplier.
 
 ### Disclaimer
 
-CVSS is owned and managed by FIRST.Org, Inc., and is used under the condition.
+CVSS is a registered trademark owned and managed by FIRST.Org, Inc., used under license conditions.
 
-This tool only helps you draft documents. Whether to publish, the accuracy of the content and the validity of the CVSS assessment are your responsibility. We recommend an internal review (legal, PR, etc.) before publication.
+This tool is designed to assist in drafting security documentation. The decision to publish, content accuracy, and CVSS scoring validity remain the sole responsibility of the user. Internal review (legal, PR, PSIRT) prior to publication is highly recommended.
 
-### Development and deployment
+### Development and Deployment
 
-Built with Vite + Vue 3 + TypeScript. GitHub Actions builds the site and publishes it to GitHub Pages (`.github/workflows/deploy.yml`).
+Built with Vite + Vue 3 + TypeScript. Automated deployment to GitHub Pages is handled via GitHub Actions (`.github/workflows/deploy.yml`).
 
-1. In Settings → Pages, set Source to "GitHub Actions".
-2. Pushing to `main` builds and publishes the site automatically.
-3. The published URL is shown in the Actions run and in Settings → Pages.
+1. Navigate to Settings → Pages and set Source to "GitHub Actions".
+2. Push to the `main` branch to trigger the build and deployment workflow.
 
-The `base` path in `vite.config.ts` is derived from the repository name, so renaming the repository requires no config change.
+### Security Policy
 
-### Project layout
+- No network requests (`connect-src 'none'` in CSP)
+- Zero usage of `v-html` or `innerHTML`
+- No external scripts, CDNs, or external stylesheets
+- Vue is the single runtime dependency
 
-| Path | Role |
-| --- | --- |
-| `index.html` | Entry point (includes the CSP) |
-| `src/main.ts` | App bootstrap |
-| `src/App.vue` | App shell and mode switching |
-| `src/modes/AdvisoryMode.vue` | Advisory mode screen |
-| `src/modes/CvssCalculatorMode.vue` | CVSS v3.x calculator mode screen |
-| `src/modes/SbomMode.vue` | SBOM / VEX mode screen |
-| `src/components/OutputPanel.vue` | Output panel (tabs, copy, save), shared across modes |
-| `src/components/CvssPicker.vue` | CVSS metric picker (with explanations) and score calculation UI |
-| `src/lib/cvss.ts` | CVSS v3.0 / v3.1 calculation and metric definitions/explanations (no Vue dependency) |
-| `src/lib/advisory.ts` | Form types, Markdown and CSAF generation (no Vue dependency; the CSAF code is kept for the planned output) |
-| `src/lib/i18n-ja.ts` | Japanese UI text, presets and CWE sample text for advisory mode |
-| `src/lib/sbom.ts` | SBOM / VEX types, paste parsing, PURL, CycloneDX generation, checks, demo (no Vue dependency) |
-| `src/lib/output.ts` | Data type passed to the output panel |
-| `src/style.css` | Styling (dark mode supported) |
-
-### Security policy
-
-- No network access (`connect-src 'none'` in the CSP)
-- No `v-html`, no `innerHTML`
-- No external scripts, stylesheets or CDNs
-- Vue is the only runtime dependency
-
-If you find a bug or a vulnerability, please open an issue.
+Please report any bugs or vulnerability issues via GitHub Issues.
 
 ---
 
