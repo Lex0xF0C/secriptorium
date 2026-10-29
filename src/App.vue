@@ -5,7 +5,8 @@ import SbomMode from './modes/SbomMode.vue'
 import VexMode from './modes/VexMode.vue' 
 import CvssCalculatorMode from './modes/CvssCalculatorMode.vue'
 import SecurityTxtMode from './modes/SecurityTxtMode.vue'
-type ModeKey = 'advisory' | 'sbom' | 'cvss' | 'securitytxt'
+import CvdPolicyMode from './modes/CvdPolicyMode.vue'
+type ModeKey = 'advisory' | 'sbom' | 'cvss' | 'securitytxt'| 'cvd' 
 
 interface ModeItem {
   key: ModeKey
@@ -23,6 +24,7 @@ const modes: ModeItem[] = [
   { key: 'sbom', label: 'SBOM / VEX', component: SbomMode, enabled: true },
   { key: 'cvss', label: 'CVSS v3.x 計算機', component: CvssCalculatorMode, enabled: true },
   { key: 'securitytxt', label: 'security.txt 作成', component: SecurityTxtMode, enabled: true },
+  { key: 'cvd', label: 'CVDポリシー', component: CvdPolicyMode, enabled: true }
 ]
 
 const switchMode = (mode: ModeItem) => {
