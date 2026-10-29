@@ -13,7 +13,7 @@ export interface AdvisoryI18n {
   presets: Record<string, [string, string][]>;
   cwes: string[];
   cweText: Record<string, [string, string]>;
-  vex: {
+  vex?: {
     title: string;
     intro: string;
     cveLabel: string;
@@ -44,8 +44,9 @@ export interface AdvisoryI18n {
     status: Record<string, string>;
     justification: Record<string, string>;
     actionCategory: Record<string, string>; 
-    securityTxtFields: Record<string, string>;
   };
+  // security.txt用のフィールド型定義を追加
+  securityTxtFields?: Record<string, string>;
 }
 
 export const I18N_JA: AdvisoryI18n = {
@@ -137,7 +138,9 @@ export const I18N_JA: AdvisoryI18n = {
     "lintOk": "必須項目はそろっています",
     "copyTsv": "📋 Excel用空テンプレート（見出し行）をコピー",
     "copiedTsv": "製品テーブルの見出し行（TSV）をコピーしました。Excel等に貼り付けて編集できます。",
-    "presetSuccess": "定型文を挿入しました" 
+    "presetSuccess": "定型文を挿入しました", // ← ★ ここにカンマが必要です！
+    
+    // security.txt用のUI文言を追加
     "securityTxtTitle": "security.txt 作成ツール",
     "securityTxtSubtitle": "RFC 9116 に準拠した security.txt をブラウザ上で安全に作成・コピーできます。",
     "copySecurityTxt": "📋 security.txt をコピー",
@@ -234,7 +237,7 @@ export const I18N_JA: AdvisoryI18n = {
     "CWE-119 バッファエラー（メモリ範囲外の操作）",
     "CWE-200 情報漏えい",
     "CWE-287 不適切な認証",
-    "CWE-306 重要な機能に対する認証의欠如",
+    "CWE-306 重要な機能に対する認証の欠如",
     "CWE-352 クロスサイト・リクエスト・フォージェリ（CSRF）",
     "CWE-400 リソースの枯渇",
     "CWE-434 危険な種類のファイルの無制限アップロード",
@@ -310,8 +313,10 @@ export const I18N_JA: AdvisoryI18n = {
       "none_available": "対応予定・修正未提供 (none_available)",
       "vendor_fix": "ベンダー修正 (vendor_fix)",
       "impact": "影響・脅威の説明 (impact)"
-    },
-    "securityTxtFields": {
+    }
+  },
+  // security.txt用の項目定義を追加
+  "securityTxtFields": {
     "contact": "連絡先 (Contact)|セキュリティ上の問題報告用メールアドレスやURL（例: mailto:security@example.com）",
     "expires": "有効期限 (Expires)|ポリシーの有効期限となる日時（ISO 8601形式、例: 2027-12-31T23:59:00.000Z）",
     "encryption": "暗号化キー (Encryption)|セキュリティ報告を暗号化するためのPGP公開鍵のURL等",
@@ -320,6 +325,5 @@ export const I18N_JA: AdvisoryI18n = {
     "canonical": "正規URL (Canonical)|security.txtファイルの正式な公開URL",
     "policy": "セキュリティポリシー (Policy)|脆弱性開示ポリシーや報奨金プログラムのURL",
     "hiring": "採用情報 (Hiring)|セキュリティ関連の採用情報ページのURL"
-  }
   }
 };
