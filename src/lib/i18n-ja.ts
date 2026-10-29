@@ -47,6 +47,8 @@ export interface AdvisoryI18n {
   };
   // security.txt用のフィールド型定義を追加
   securityTxtFields?: Record<string, string>;
+  cvdFields?: Record<string, string>;
+  cvdUi?: Record<string, string>;
 }
 
 export const I18N_JA: AdvisoryI18n = {
@@ -325,5 +327,22 @@ export const I18N_JA: AdvisoryI18n = {
     "canonical": "正規URL (Canonical)|security.txtファイルの正式な公開URL",
     "policy": "セキュリティポリシー (Policy)|脆弱性開示ポリシーや報奨金プログラムのURL",
     "hiring": "採用情報 (Hiring)|セキュリティ関連の採用情報ページのURL"
+  },
+  "cvdFields": {
+    "orgName": "組織名・企業名|ポリシーを発行する組織の名称",
+    "contactEmail": "報告用メールアドレス|セキュリティ上の脆弱性を受け付けるメールアドレス（例: security@example.com）",
+    "scope": "適用範囲 (Scope)|本ポリシーの対象となる製品、サービス、およびドメイン",
+    "reporting": "脆弱性の報告方法 (Reporting)|報告時に含めてほしい情報や暗号化（PGP）の詳細",
+    "safeHarbor": "セーフハーバー (Safe Harbor)|善意で行われたセキュリティ調査に対する法的免責の明示",
+    "timeline": "対応のタイムフレーム (Timeline)|初動の受領確認（例: 24〜48時間以内）や初期評価の目安",
+    "preferences": "開示の調整とエンバーゴ (Preferences)|修正プログラム公開までの調整ルールや非公開期間",
+    "acknowledgments": "謝辞 (Acknowledgments)|発見者への謝辞掲載方針やクレジット表記に関する条件"
+  },
+  "cvdUi": {
+    "cvdTitle": "CVDポリシー作成ツール",
+    "cvdSubtitle": "ENISAのガイドラインおよびCRA要件に準拠した「協調的な脆弱性開示ポリシー」をブラウザ上で作成・コピーできます。",
+    "copyCvd": "📋 CVDポリシーをコピー",
+    "copiedCvd": "CVDポリシーの内容をクリップボードにコピーしました。",
+    "dlCvd": "💾 CVDポリシーをダウンロード (.md)"
   }
 };
