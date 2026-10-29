@@ -1,6 +1,7 @@
 <p align="center">
   <img src="public/Image_secriptorium.jpg" alt="Secriptorium Logo" width="500" height="500">
 </p>
+
 # Secriptorium
 
 **Static. Client-side. Nothing leaves your browser.**
