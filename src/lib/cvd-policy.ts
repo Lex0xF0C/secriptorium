@@ -49,7 +49,7 @@ export function generateCvdPolicy(form: CvdPolicyForm): string {
     form.acknowledgments.trim() || '（謝辞の方針が未入力です)',
     '',
     '---',
-    `* 本ポリシーは ENISA（欧州ネットワーク情報セキュリティ機関）のガイドラインおよび関連する国際標準に準拠して作成されています。`,
+    `* 本ポリシーは ENISA（欧州連合サイバーセキュリティ局）のガイドラインおよび関連する国際標準に準拠して作成されています。`,
     ''
   ]
 
