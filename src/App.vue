@@ -28,7 +28,7 @@ const modes: ModeItem[] = [
   { key: 'cvss', label: 'CVSS v3.x 計算機', component: CvssCalculatorMode, enabled: true },
   { key: 'securitytxt', label: 'security.txt 作成', component: SecurityTxtMode, enabled: true },
   { key: 'cvd', label: 'CVDポリシー', component: CvdPolicyMode, enabled: true },
-  { key: 'gna', label: I18N_JA.ui?.modeGna || 'GNA / BCP-06 支援', component: GnaMode, enabled: true }
+  { key: 'gna', label: I18N_JA.ui?.modeGna || 'GNA / BCP-06 支援', component: GnaMode, enabled: false }
 ]
 
 const switchMode = (mode: ModeItem) => {
