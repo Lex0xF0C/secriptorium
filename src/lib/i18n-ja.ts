@@ -49,7 +49,7 @@ export interface AdvisoryI18n {
   securityTxtFields?: Record<string, string>;
   cvdFields?: Record<string, string>;
   cvdUi?: Record<string, string>;
-// ★ CVDプリセット用の型定義を追加
+  // ★ CVDプリセット用の型定義を追加
   cvdPresets?: Array<{
     id: string;
     label: string;
@@ -63,6 +63,9 @@ export interface AdvisoryI18n {
       acknowledgments: string;
     };
   }>;
+  // ▼ 【追加】GNA (BCP-06) 支援用の型定義
+  gnaFields?: Record<string, string>;
+  gnaUi?: Record<string, string>;
 }
 
 export const I18N_JA: AdvisoryI18n = {
@@ -154,14 +157,17 @@ export const I18N_JA: AdvisoryI18n = {
     "lintOk": "必須項目はそろっています",
     "copyTsv": "📋 Excel用空テンプレート（見出し行）をコピー",
     "copiedTsv": "製品テーブルの見出し行（TSV）をコピーしました。Excel等に貼り付けて編集できます。",
-    "presetSuccess": "定型文を挿入しました", // ← ★ ここにカンマが必要です！
+    "presetSuccess": "定型文を挿入しました",
     
-    // security.txt用のUI文言を追加
+    // security.txt用のUI文言
     "securityTxtTitle": "security.txt 作成ツール",
     "securityTxtSubtitle": "RFC 9116 に準拠した security.txt をブラウザ上で安全に作成・コピーできます。",
     "copySecurityTxt": "📋 security.txt をコピー",
     "copiedSecurityTxt": "security.txt の内容をクリップボードにコピーしました。",
-    "dlSecurityTxt": "💾 security.txt をダウンロード"
+    "dlSecurityTxt": "💾 security.txt をダウンロード",
+
+    // ▼ 【追加】GNA (BCP-06) モード用の UI 文言とタブ切り替え用
+    "modeGna": "GNA / BCP-06 支援"
   },
   "sev": {
     "critical": "緊急",
@@ -331,7 +337,6 @@ export const I18N_JA: AdvisoryI18n = {
       "impact": "影響・脅威の説明 (impact)"
     }
   },
-  // security.txt用の項目定義を追加
   "securityTxtFields": {
     "contact": "連絡先 (Contact)|セキュリティ上の問題報告用メールアドレスやURL（例: mailto:security@example.com）",
     "expires": "有効期限 (Expires)|ポリシーの有効期限となる日時（ISO 8601形式、例: 2027-12-31T23:59:00.000Z）",
@@ -360,7 +365,6 @@ export const I18N_JA: AdvisoryI18n = {
     "dlCvd": "💾 CVDポリシーをダウンロード (.md)",
     "presetTitle": "💡 クイックセットアップ（組織の体制に合わせて選択すると文面が自動補完されます）"
   },
-  // ★ 初学者をアシストする標準プリセット文面をすべて辞書に集約
   "cvdPresets": [
     {
       "id": "standard",
@@ -401,5 +405,20 @@ export const I18N_JA: AdvisoryI18n = {
         "acknowledgments": "リリースノートおよびリポジトリの CONTRIBUTORS ファイル等に感謝の意を込めてお名前を掲載させていただきます。"
       }
     }
-  ]
+  ],
+  // ▼ 【追加】GNA (BCP-06) 支援用の項目定義
+  "gnaFields": {
+    "gnaId": "GNA識別子 (GNA ID)|割り当てられた一意のGNA識別子（例: GNA-001）",
+    "organization": "組織名 (Organization)|GNAを運営する組織またはベンダーの名称",
+    "disclosureModel": "開示モデル (Disclosure Model)|協調的開示 (CVD) または即時完全開示の選択",
+    "securityContact": "セキュリティ連絡先 (Security Contact)|GNAとしての受信用セキュリティ連絡先"
+  },
+  "gnaUi": {
+    "gnaTitle": "GNA (GCVE Numbering Authority) 支援ツール",
+    "gnaSubtitle": "BCP-06 準拠の Conformance JSON やメタデータをブラウザ内でサポートします。",
+    "copyGnaJson": "📋 Conformance JSON をコピー",
+    "copiedGnaJson": "Conformance JSON をクリップボードにコピーしました。",
+    "dlGnaJson": "💾 Conformance JSON をダウンロード",
+    "gnaConstraintNotice": "🔒 完全ブラウザ完結モード：ツール側でデータやIDの重複履歴は保持されません。重複排除やバックアップは自社の管理台帳（Git等）で必ず行ってください。"
+  }
 };

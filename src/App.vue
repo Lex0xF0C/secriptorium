@@ -6,7 +6,10 @@ import VexMode from './modes/VexMode.vue'
 import CvssCalculatorMode from './modes/CvssCalculatorMode.vue'
 import SecurityTxtMode from './modes/SecurityTxtMode.vue'
 import CvdPolicyMode from './modes/CvdPolicyMode.vue'
-type ModeKey = 'advisory' | 'sbom' | 'cvss' | 'securitytxt'| 'cvd' 
+import GnaMode from './modes/GnaMode.vue'
+import { I18N_JA } from './lib/i18n-ja'
+
+type ModeKey = 'advisory' | 'vex' | 'sbom' | 'cvss' | 'securitytxt' | 'cvd' | 'gna'
 
 interface ModeItem {
   key: ModeKey
@@ -24,7 +27,8 @@ const modes: ModeItem[] = [
   { key: 'sbom', label: 'SBOM / VEX', component: SbomMode, enabled: true },
   { key: 'cvss', label: 'CVSS v3.x 計算機', component: CvssCalculatorMode, enabled: true },
   { key: 'securitytxt', label: 'security.txt 作成', component: SecurityTxtMode, enabled: true },
-  { key: 'cvd', label: 'CVDポリシー', component: CvdPolicyMode, enabled: true }
+  { key: 'cvd', label: 'CVDポリシー', component: CvdPolicyMode, enabled: true },
+  { key: 'gna', label: I18N_JA.ui?.modeGna || 'GNA / BCP-06 支援', component: GnaMode, enabled: true }
 ]
 
 const switchMode = (mode: ModeItem) => {
