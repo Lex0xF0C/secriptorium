@@ -1,6 +1,6 @@
 # AGENTS.md - AI Development Guidelines
 
-This repository hosts **Secriptorium**, a browser-based, client-side tool that helps people publish and submit vulnerability information. Modes: security advisory authoring (Markdown), a CVSS v3.x calculator, and SBOM / VEX authoring (CycloneDX JSON). CSAF 2.0 output for advisory mode is a **future improvement** (not implemented in the UI yet).
+This repository hosts **Secriptorium**, a browser-based, client-side tool that helps people publish and submit vulnerability information. Modes: security advisory authoring (Markdown), a CVSS v3.x calculator, SBOM / VEX authoring (CycloneDX JSON), CSAF 2.0 VEX authoring, `security.txt` (RFC 9116) generation, and CVD policy authoring. CSAF 2.0 output for the advisory mode is a **future improvement** (not implemented in the UI yet); CSAF 2.0 is currently emitted only by the CSAF VEX mode.
 
 AI agents modifying this repository **MUST** follow the rules below.
 
@@ -29,9 +29,9 @@ AI agents modifying this repository **MUST** follow the rules below.
 ## 4. Structure
 
 - `src/main.ts` – bootstrap. `src/App.vue` – shell and mode switching.
-- `src/modes/` – one screen per mode (`AdvisoryMode.vue`, `CvssCalculatorMode.vue`, `SbomMode.vue`).
+- `src/modes/` – one screen per mode (`AdvisoryMode.vue`, `CvssCalculatorMode.vue`, `SbomMode.vue`, `VexMode.vue`, `SecurityTxtMode.vue`, `CvdPolicyMode.vue`).
 - `src/components/OutputPanel.vue` – shared output panel. Modes pass `OutputTab[]` (`src/lib/output.ts`); do not duplicate copy/save logic.
-- `src/lib/` – pure TypeScript logic with **no Vue imports** (`cvss.ts`: CVSS calculation and metric texts; `advisory.ts`: form types and Markdown/CSAF generation (the CSAF code is kept for the planned CSAF output and is currently unused by the UI); `i18n-ja.ts`: Japanese texts, presets and CWE samples for advisory mode; `sbom.ts`: SBOM/VEX types, paste parsing, PURL, CycloneDX generation, checks, demo data; `output.ts`: output tab type). Keep it testable in isolation.
+- `src/lib/` – pure TypeScript logic with **no Vue imports** (`cvss.ts`: CVSS calculation and metric texts; `advisory.ts`: form types and Markdown/CSAF generation (the CSAF code is kept for the planned CSAF output and is currently unused by the UI); `i18n-ja.ts`: Japanese texts, presets and CWE samples for advisory mode; `sbom.ts`: SBOM/VEX types, paste parsing, PURL, CycloneDX generation, checks, demo data; `vex.ts`: CSAF 2.0 VEX types, paste parsing, JSON generation, warnings; `security-txt.ts`: security.txt text generation; `cvd-policy.ts`: CVD policy Markdown generation; `output.ts`: output tab type). Keep it testable in isolation.
 - `src/components/CvssPicker.vue` – metric picker bound to a vector string via `v-model`.
 - `src/style.css` – global styles with CSS variables and light/dark support.
 - `vite.config.ts` derives `base` from `GITHUB_REPOSITORY`; do not hard-code the repository name.
@@ -44,6 +44,10 @@ AI agents modifying this repository **MUST** follow the rules below.
 - **CVSS:** `src/lib/cvss.ts` computes the v3.0 / v3.1 base score from the vector (only the rounding function differs between the two). Do not alter the formulas without explicit instruction. After any change, verify known vectors for both versions (`AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H` = 9.8; `S:C` with all High = 10.0; all `N` impacts = 0). CVSS 4.0 is intentionally unsupported until CSAF supports it; if added, vendor the official calculator logic (BSD-2-Clause) with its notice in `THIRD_PARTY_NOTICES.md`, and show attribution (CVSS is owned by FIRST and used by permission).
 - **CSAF 2.0 (future improvement):** the advisory-mode UI does not offer CSAF output yet. Adding it requires publisher name and namespace (URL) input fields. When added, the output is best-effort. `scores[].cvss_v3` is emitted only for v3.0/v3.1 vectors (with the matching `version`); a CVSS 4.0 vector is never put into CSAF 2.0. Required-but-missing items are surfaced via `csafWarnings()`. Never claim full conformance; the README tells users to validate with an official validator.
 
+- **CSAF 2.0 VEX:** `src/lib/vex.ts` (screen: `VexMode.vue`) is the only part of the UI that emits CSAF 2.0. Pasted TSV is untrusted input (plain text only, capped sizes). Output is best-effort; required-but-missing items are surfaced via `vexWarnings()`.
+- **security.txt / CVD policy:** these are template-based text generators (`security-txt.ts`, `cvd-policy.ts`). security.txt follows RFC 9116 (`Contact` and `Expires` are the required fields).
+- **No compliance claims:** never state that a generated document complies with, or is certified under, any standard, regulation or guideline (RFC 9116, CSAF, CycloneDX, ENISA guidelines, CRA, etc.). Use wording such as "based on" or "refers to", and keep the README's validation advice.
+
 ## 6. SBOM / VEX Rules
 
 - Format: **CycloneDX JSON** (currently spec 1.6, `CDX_SPEC_VERSION` in `sbom.ts`). SBOM and VEX are **separate documents**; the VEX references SBOM components by bom-link (`urn:cdx:<serial>/1#<bom-ref>`). Both serial numbers and the timestamp live in `SbomForm`, so the same input always yields the same output. Never generate them inside the builders.
@@ -52,7 +56,7 @@ AI agents modifying this repository **MUST** follow the rules below.
 - Pasted text (TSV/CSV) is **untrusted input**: parse as plain text only, never as HTML; keep the limits in `LIMITS` (characters, rows, field length, statements).
 - No JSON import. Persistence across sessions is by TSV export/paste of the component table only.
 - Demo data is fictional and must stay marked as sample (`isDemo` adds a note property to the output). CVE details in the demo are examples; verify them against NVD before changing or relying on them.
-- Planned: licenses, hashes, dependency graph, a customer-facing explanation document, possibly a CSAF VEX output (reusing the CSAF code).
+- Planned: licenses, hashes, dependency graph, a customer-facing explanation document. (A CSAF VEX output already exists as the separate CSAF VEX mode.)
 
 ## 7. Instructions for AI Code Modifications
 
