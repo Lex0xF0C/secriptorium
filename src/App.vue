@@ -6,10 +6,11 @@ import VexMode from './modes/VexMode.vue'
 import CvssCalculatorMode from './modes/CvssCalculatorMode.vue'
 import SecurityTxtMode from './modes/SecurityTxtMode.vue'
 import CvdPolicyMode from './modes/CvdPolicyMode.vue'
+import CvdProcessMode from './modes/CvdProcessMode.vue'
 import GnaMode from './modes/GnaMode.vue'
 import { I18N_JA } from './lib/i18n-ja'
 
-type ModeKey = 'advisory' | 'vex' | 'sbom' | 'cvss' | 'securitytxt' | 'cvd' | 'gna'
+type ModeKey = 'advisory' | 'vex' | 'sbom' | 'cvss' | 'securitytxt' | 'cvd' | 'cvdprocess' | 'gna'
 
 interface ModeItem {
   key: ModeKey
@@ -28,6 +29,7 @@ const modes: ModeItem[] = [
   { key: 'cvss', label: 'CVSS v3.x 計算機', component: CvssCalculatorMode, enabled: true },
   { key: 'securitytxt', label: 'security.txt 作成', component: SecurityTxtMode, enabled: true },
   { key: 'cvd', label: 'CVDポリシー', component: CvdPolicyMode, enabled: true },
+  { key: 'cvdprocess', label: 'CVDプロセス管理', component: CvdProcessMode, enabled: true },
   { key: 'gna', label: I18N_JA.ui?.modeGna || 'GNA / BCP-06 支援', component: GnaMode, enabled: false }
 ]
 
@@ -39,7 +41,6 @@ const switchMode = (mode: ModeItem) => {
 </script>
 
 <template>
-  <!-- style.css の .top クラスが適用される共通ヘッダとモード切り替えタブ -->
   <header class="top">
     <h1>Secriptorium 脆弱性アドバイザリ・SBOM・CVSSツール</h1>
     <p>入力した内容はこのブラウザの中だけで処理され、外部には送信されません。</p>
@@ -60,8 +61,6 @@ const switchMode = (mode: ModeItem) => {
     </div>
   </header>
 
-  <!-- 選択されたモードのコンポーネントを表示 -->
-  <!-- KeepAlive: タブを切り替えても、入力内容が消えないようにする -->
   <main>
     <KeepAlive>
       <component :is="currentComponent" />

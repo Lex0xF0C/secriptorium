@@ -45,11 +45,9 @@ export interface AdvisoryI18n {
     justification: Record<string, string>;
     actionCategory: Record<string, string>; 
   };
-  // security.txt用のフィールド型定義を追加
   securityTxtFields?: Record<string, string>;
   cvdFields?: Record<string, string>;
   cvdUi?: Record<string, string>;
-  // ★ CVDプリセット用の型定義を追加
   cvdPresets?: Array<{
     id: string;
     label: string;
@@ -63,9 +61,22 @@ export interface AdvisoryI18n {
       acknowledgments: string;
     };
   }>;
-  // ▼ 【追加】GNA (BCP-06) 支援用の型定義
   gnaFields?: Record<string, string>;
   gnaUi?: Record<string, string>;
+
+  // ▼ 【追加】CVD プロセス管理用型定義
+  cvdProcessFields?: Record<string, string>;
+  cvdProcessUi?: Record<string, string>;
+  cvdProcessPhases?: Array<{
+    id: string;
+    title: string;
+    description: string;
+    items: Array<{
+      id: string;
+      title: string;
+      description: string;
+    }>;
+  }>;
 }
 
 export const I18N_JA: AdvisoryI18n = {
@@ -420,5 +431,130 @@ export const I18N_JA: AdvisoryI18n = {
     "copiedGnaJson": "Conformance JSON をクリップボードにコピーしました。",
     "dlGnaJson": "💾 Conformance JSON をダウンロード",
     "gnaConstraintNotice": "🔒 完全ブラウザ完結モード：ツール側でデータやIDの重複履歴は保持されません。重複排除やバックアップは自社の管理台帳（Git等）で必ず行ってください。"
-  }
+  },
+  // ▼ 【追加】CVD プロセス管理用 UI 辞書
+  "cvdProcessFields": {
+    "cveId": "管理番号 / CVE ID|案件を特定する識別子（例: CVE-2026-9999 / CVD-2026-001）",
+    "title": "脆弱性件名・タイトル|対象製品や脆弱性の概要（例: ○○製品における認証回避の脆弱性）",
+    "reporter": "報告者名・連絡先|発見者または調整機関の名称（例: JPCERT/CC, 研究者氏名）",
+    "assignee": "社内担当者 / PSIRT|対応を担当するチームまたは担当者名",
+    "receivedDate": "報告受領日|報告を最初に受け取った日付",
+    "targetReleaseDate": "目標公開日（エンバーゴ）|パッチおよびアドバイザリの公開目標日",
+    "generalNotes": "全体備考・特記事項|非公開情報、検証環境のURL、調整状況の補足など"
+  },
+  "cvdProcessUi": {
+    "title": "CVDプロセス管理・タイムライン生成",
+    "subtitle": "脆弱性の受領から検証・修正・協調公表までの全工程をチェックリストとタイムラインで一元管理します。",
+    "copyMd": "📋 Markdown進捗レポートをコピー",
+    "copiedMd": "Markdown進捗レポートをクリップボードにコピーしました。",
+    "dlMd": "💾 Markdown進捗レポートをダウンロード (.md)",
+    "copyJson": "📋 JSONデータをコピー",
+    "copiedJson": "JSONデータをクリップボードにコピーしました。",
+    "dlJson": "💾 JSONデータをダウンロード (.json)",
+    "noticeBadge": "🔒 完全ブラウザ完結：本ツールはサーバーへデータを送信・保存しません。進捗状態を保存したい場合は「Markdown」または「JSON」をダウンロードして記録を保持してください。",
+    "progressLabel": "全体の進捗状況",
+    "completedCount": "完了ステップ",
+    "phaseTitle": "対応フェーズ別チェックリスト",
+    "timelineTitle": "📅 プロセス進捗タイムライン",
+    "btnReset": "🔄 デフォルト状態にリセット",
+    "resetConfirm": "チェックリストの入力をデフォルト初期状態に戻します。よろしいですか？",
+    "filterAll": "すべて表示",
+    "filterPending": "未完了のみ",
+    "filterDone": "完了済みのみ"
+  },
+  "cvdProcessPhases": [
+    {
+      "id": "phase1",
+      "title": "1. 受領・初動対応 (Reception & Initial Response)",
+      "description": "報告の受付、受領確認の返信、および社内管理番号の採番と初期共有",
+      "items": [
+        {
+          "id": "intake_receipt",
+          "title": "受領確認応答の送信",
+          "description": "報告者に対して受領確認メールを送信（目標: 24〜48時間以内）"
+        },
+        {
+          "id": "intake_log",
+          "title": "管理番号の採番とログ記録",
+          "description": "社内ID (CVD-YYYY-NNN等) の発行と対応チャネルのセットアップ"
+        },
+        {
+          "id": "intake_scope",
+          "title": "対象製品・影響範囲の初期確認",
+          "description": "報告対象の製品・バージョン・サービスが自社管理下にあるか確認"
+        }
+      ]
+    },
+    {
+      "id": "phase2",
+      "title": "2. 技術検証・修正作成 (Triage & Remediation)",
+      "description": "再現実験、CVSS評価、パッチ・回避策の開発と回帰テスト",
+      "items": [
+        {
+          "id": "triage_reproduce",
+          "title": "脆弱性の再現検証とCVSS評価",
+          "description": "報告内容に基づき実環境・検証環境で再現を確認し、CVSS基本値を仮算出"
+        },
+        {
+          "id": "triage_severity",
+          "title": "深刻度確定と開発チームへの割り当て",
+          "description": "深刻度（緊急・重要・警告等）を決定し、修正担当開発チームを割り当て"
+        },
+        {
+          "id": "patch_develop",
+          "title": "修正プログラム・回避策の作成",
+          "description": "パッチコードの開発、またはパッチ適用不可時の回避策（Workaround）の策定"
+        },
+        {
+          "id": "patch_test",
+          "title": "修正検証と回帰テストの実施",
+          "description": "パッチにより脆弱性が解消されたこと、副作用が発生しないことを確認"
+        }
+      ]
+    },
+    {
+      "id": "phase3",
+      "title": "3. 調整・アドバイザリ準備 (Coordination & Disclosure Prep)",
+      "description": "公表スケジュールの調整、CVE IDの手配、公表ドキュメントの作成",
+      "items": [
+        {
+          "id": "coord_embargo",
+          "title": "公表目標日（エンバーゴ）の調整・合意",
+          "description": "報告者・調整機関（IPA/JPCERT/CC等）と修正公表予定日を合意"
+        },
+        {
+          "id": "coord_cve",
+          "title": "CVE IDの確認・申請",
+          "description": "CNA経由でCVE IDを取得、または既存CVEとの紐付けを確認"
+        },
+        {
+          "id": "coord_advisory",
+          "title": "アドバイザリ・VEXステートメントの作成",
+          "description": "Secriptorium等を用いてMarkdownアドバイザリやCSAF VEXを作成"
+        }
+      ]
+    },
+    {
+      "id": "phase4",
+      "title": "4. 修正公開・情報共有 (Release & Publication)",
+      "description": "パッチの公式配信、アドバイザリ公開、謝辞の掲載とフォローアップ",
+      "items": [
+        {
+          "id": "release_patch",
+          "title": "修正版ソフトウェア・パッチの公式リリース",
+          "description": "アップデートサーバーや配信ページに修正版を公開配信"
+        },
+        {
+          "id": "release_advisory",
+          "title": "脆弱性アドバイザリの同時公開",
+          "description": "公式ポータルやsecurity.txt参照先へアドバイザリを公開"
+        },
+        {
+          "id": "release_notify",
+          "title": "報告者への完了通知と謝辞の掲載",
+          "description": "報告者へ公開を連絡し、同意に基づき謝辞（Hall of Fame等）を掲載"
+        }
+      ]
+    }
+  ]
 };
