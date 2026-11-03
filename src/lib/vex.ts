@@ -2,6 +2,7 @@ import { cveList, cveOk } from './advisory'
 import { I18N_JA } from './i18n-ja'
 
 export type VexStatus = 'known_not_affected' | 'known_affected' | 'fixed' | 'under_investigation'
+export type VexProductStatus = VexStatus
 
 export type VexJustification =
   | 'vulnerable_code_not_present'
@@ -13,17 +14,20 @@ export type VexJustification =
 export type VexActionCategory = 'vendor_fix' | 'workaround' | 'mitigation' | 'none_available' | 'impact'
 
 export interface VexProduct {
+  id?: string
   name: string
   version: string
   status: VexStatus
   justification: VexJustification
-  actionCategory: VexActionCategory // ★ 明示的分類
-  detail: string
+  actionCategory?: VexActionCategory // ★ 明示的分類
+  detail?: string
+  impactDetail?: string
 }
 
 export interface VexForm {
   cve: string
-  advisoryId: string
+  advisoryId?: string
+  documentId?: string
   publisherName: string
   publisherNamespace: string
   published: string
@@ -39,17 +43,20 @@ export function emptyVexForm(): VexForm {
   return {
     cve: '',
     advisoryId: '',
+    documentId: '',
     publisherName: '',
     publisherNamespace: '',
     published: `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`,
     summary: '',
     products: [
-      { name: '', version: '', status: 'known_not_affected', justification: 'vulnerable_code_not_present', actionCategory: 'impact', detail: '' }
+      { id: '1', name: '', version: '', status: 'known_not_affected', justification: 'vulnerable_code_not_present', actionCategory: 'impact', detail: '' }
     ],
     refs: '',
     contact: '',
   }
 }
+
+export const defaultVexForm = emptyVexForm
 
 const T = (s: unknown) => (typeof s === 'string' ? s.trim() : String(s || '').trim())
 const lines = (s: string) => T(s).split('\n').map(T).filter(Boolean)
@@ -59,7 +66,8 @@ export function vexWarnings(f: VexForm): string[] {
   const cves = cveList(f.cve)
 
   if (cves.length === 0 || !cves.every(cveOk)) w.push('対象CVE番号（CVE-YYYY-NNNN 形式）')
-  if (!T(f.advisoryId)) w.push('管理番号（tracking.id）')
+  const docId = f.advisoryId || f.documentId || ''
+  if (!T(docId)) w.push('管理番号（tracking.id）')
   if (!T(f.publisherName)) w.push('発行者名')
   if (!/^https?:\/\//.test(T(f.publisherNamespace))) w.push('発行者のURL（https:// で始まる）')
   if (!T(f.published)) w.push('公開日')
@@ -139,6 +147,10 @@ export function parseVexProducts(text: string): { products: VexProduct[]; warnin
   return { products, warnings }
 }
 
+export function parseTsvVexProducts(text: string): VexProduct[] {
+  return parseVexProducts(text).products
+}
+
 export function toVexTsv(products: VexProduct[]): string {
   const statusJA = I18N_JA?.vex?.status || {}
   const justJA = I18N_JA?.vex?.justification || {}
@@ -165,7 +177,8 @@ export function buildCsafVex(f: VexForm) {
 
   const prodWithIds = validProducts.map((p, i) => ({
     ...p,
-    id: `CSAFPID-${String(i + 1).padStart(4, '0')}`
+    id: p.id || `CSAFPID-${String(i + 1).padStart(4, '0')}`,
+    detail: p.detail || p.impactDetail || ''
   }))
 
   const statusGroup: Record<VexStatus, string[]> = {
@@ -253,7 +266,7 @@ export function buildCsafVex(f: VexForm) {
       title: `VEX Statement for ${cves.join(', ') || 'CVE'}`,
       publisher: { category: 'vendor', name: vendor, namespace: T(f.publisherNamespace) },
       tracking: {
-        id: T(f.advisoryId),
+        id: T(f.advisoryId || f.documentId),
         status: 'final',
         version: '1',
         initial_release_date: date,
