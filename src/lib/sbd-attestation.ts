@@ -1,11 +1,19 @@
 import { I18N_JA } from './i18n-ja'
 
+export interface EvidencePreset {
+  label: string
+  value: string
+}
+
 export interface EvidenceItem {
   id: string
   playbookId: '4.13' | '4.14' | 'sbd_general'
   playbookTitle: string
   title: string
   description: string
+  explanation: string // ★ Playbook の背景・解説
+  examples: string[]  // ★ 具体的な証跡の例
+  presets: EvidencePreset[] // ★ ワンタップ入力プリセット
   craRef: string
   checked: boolean
   evidenceDetail: string
@@ -34,6 +42,17 @@ export function defaultSbdAttestationForm(): SbdAttestationForm {
       playbookTitle: '4.13 脆弱性管理とパッチ管理',
       title: '脆弱性追跡ボード／登録簿の維持',
       description: '発見・報告された脆弱性の深刻度、担当者、目標日、ステータスを管理している',
+      explanation: '単にパッチを当てるだけでなく、報告から修正までの責任者や期限が明確に追跡可能であることを監査人や顧客へ示すための要件です。',
+      examples: [
+        'GitHub Issues / GitHub Projects の脆弱性管理ボード',
+        'Jira / Redmine のセキュリティチケット一覧',
+        'Excel / Google スプレッドシートの脆弱性管理台帳'
+      ],
+      presets: [
+        { label: 'GitHub Issueボード', value: '[suspicious link removed]' },
+        { label: 'Jira チケット一覧', value: 'Jira Project (VULN) にてステータス追跡中' },
+        { label: '社内管理台帳', value: '社内セキュリティ管理台帳 (Vulnerability-Log.xlsx) で管理' }
+      ],
       craRef: 'CRA 附属書I 第II部 (2), (5)'
     },
     {
@@ -42,6 +61,15 @@ export function defaultSbdAttestationForm(): SbdAttestationForm {
       playbookTitle: '4.13 脆弱性管理とパッチ管理',
       title: 'パッチ修正 SLA の定義',
       description: '深刻度に応じたトリアージ時間および是正／リリース目標SLAを定めている',
+      explanation: '脆弱性受領後、放置されずに規定時間内に対応が開始される約束（SLA）が存在することを証明します。',
+      examples: [
+        'CVDポリシー内またはPSIRT運用要領に明記された目標時間（例: 緊急24時間以内、高14日以内）',
+        'SLA定義ドキュメント'
+      ],
+      presets: [
+        { label: '標準SLA設定', value: '緊急: 24時間以内に受領・14日以内修正 / 高: 30日以内修正' },
+        { label: 'CVDポリシー連動', value: 'CVDポリシー記載の目標タイムフレームに準拠' }
+      ],
       craRef: 'CRA 附属書I 第II部 (2)'
     },
     {
@@ -50,31 +78,51 @@ export function defaultSbdAttestationForm(): SbdAttestationForm {
       playbookTitle: '4.13 脆弱性管理とパッチ管理',
       title: 'CI/CD での自動スキャン実行 (SAST / 依存関係)',
       description: 'ビルド・リリース時に静的解析および依存関係スキャンが自動実行されている',
+      explanation: 'コード変更やリリースごとに、ツールが自動で既知の脆弱性や不具合をチェックしていることを示します。',
+      examples: [
+        'GitHub Actions (Trivy / Snyk / CodeQL / Dependency Review) の実行ログ',
+        'GitLab CI / SonarQube のスキャンレポート'
+      ],
+      presets: [
+        { label: 'GitHub Actions (Trivy)', value: 'GitHub Actions (Trivy Workflow) で毎ビルド実行' },
+        { label: 'Snyk CI スキャン', value: 'Snyk Container & Dependency Scan ログ確認済み' },
+        { label: 'SonarQube ログ', value: 'SonarQube SAST 分析レポート出力あり' }
+      ],
       craRef: 'CRA 附属書I 第I部 (1.2.a), 第II部 (1)'
-    },
-    {
-      id: 'ev_patch_release_record',
-      playbookId: '4.13',
-      playbookTitle: '4.13 脆弱性管理とパッチ管理',
-      title: 'パッチリリースの記録とトレーサビリティ',
-      description: '脆弱性チケット ➔ PR ➔ テスト ➔ リリースバージョン ➔ 配信確認のリンクを保持',
-      craRef: 'CRA 附属書I 第II部 (4), (7)'
     },
     {
       id: 'ev_sbom_generation',
       playbookId: '4.14',
       playbookTitle: '4.14 サプライチェーンの管理策',
-      title: 'リリースごとの機械可読 SBOM (CycloneDX / SPDX) 保管',
+      title: 'リリースごとの機械可読 SBOM (CycloneDX) 保管',
       description: 'リリース成果物とともに機械可読形式の SBOM が生成・保管されている',
+      explanation: '出荷した製品にどのOSS部品が含まれているか、後から検索・特定できる状態であることを示します。',
+      examples: [
+        'ビルド時に生成された CycloneDX 1.6 JSON ファイル',
+        'GitHub Release アセット内の bom.json'
+      ],
+      presets: [
+        { label: 'CycloneDX JSON 保管', value: 'リリースアセット (bom.json / CycloneDX 1.6) として保管' },
+        { label: 'syft 自動生成', value: 'syft ツールにより CI/CD パイプライン内で自動生成' }
+      ],
       craRef: 'CRA 附属書I 第II部 (1)'
     },
     {
-      id: 'ev_secret_scanning',
+      id: 'ev_peer_review',
       playbookId: '4.14',
       playbookTitle: '4.14 サプライチェーンの管理策',
-      title: 'シークレットスキャンとコミット前検証',
-      description: 'ソースコードリポジトリに認証情報や暗号鍵がハードコードされていない',
-      craRef: 'CRA 附属書I 第I部 (1.2.b), (1.2.e)'
+      title: '重要コードのコードレビュー (CODEOWNERS / ピア承認)',
+      description: 'セキュリティに影響するコード変更に対し、担当者の承認が必須化されている',
+      explanation: '単独の開発者が勝手に悪意あるコードや不正な設定を本番に紛れ込ませられない仕組みを実証します。',
+      examples: [
+        'リポジトリ内の CODEOWNERS ファイル',
+        'GitHub / GitLab の Pull Request レビュー・承認履歴'
+      ],
+      presets: [
+        { label: 'CODEOWNERS 設定', value: '.github/CODEOWNERS ファイルにてレビュー必須化' },
+        { label: 'PR 承認ログ', value: 'ブランチ保護ルールにより 2名以上の承認要求を強制' }
+      ],
+      craRef: 'CRA 附属書I 第I部 (1.2.f)'
     },
     {
       id: 'ev_artifact_signing',
@@ -82,6 +130,16 @@ export function defaultSbdAttestationForm(): SbdAttestationForm {
       playbookTitle: '4.14 サプライチェーンの管理策',
       title: 'ビルド成果物・パッチへの暗号署名',
       description: '配布されるファームウェアやバイナリに暗号署名が付与され完全性が検証可能',
+      explanation: 'ユーザーや機器がアップデートを適用する際、途中で改ざんされていないことを検証できる根拠です。',
+      examples: [
+        'Sigstore Cosign によるコンテナ / バイナリ署名',
+        'PGP / GPG 署名ファイル (.asc)',
+        'ファームウェア署名検証ログ'
+      ],
+      presets: [
+        { label: 'Cosign 署名', value: 'Sigstore / Cosign によるビルド証明付きキーレス署名' },
+        { label: 'GPG/PGP 署名', value: 'リリースバイナリに対する GPG 署名 (.sig) を公開' }
+      ],
       craRef: 'CRA 附属書I 第II部 (7)'
     },
     {
@@ -90,6 +148,15 @@ export function defaultSbdAttestationForm(): SbdAttestationForm {
       playbookTitle: 'セキュア・バイ・デフォルト基盤',
       title: 'ルートファイルシステムの読み取り専用化 (Read-only FS)',
       description: '不変なファイルシステム構成によりマルウェアの永続化・改ざんを防ぐ',
+      explanation: '万が一攻撃者に侵入されても、システム領域のファイルを書き換えられない（マルウェアを居座らせない）堅牢化設計です。',
+      examples: [
+        'Linux パーティションテーブルの / (ro) マウント設定',
+        'Docker / Container の read_only: true 設定'
+      ],
+      presets: [
+        { label: 'Read-only マウント', value: '/etc/fstab でルートパーティションを ro 設定' },
+        { label: 'Docker read_only', value: 'コンテナ起動オプション read_only: true を適用' }
+      ],
       craRef: 'CRA 附属書I 第I部 (1.2.f), (1.2.j)'
     },
     {
@@ -98,6 +165,15 @@ export function defaultSbdAttestationForm(): SbdAttestationForm {
       playbookTitle: 'セキュア・バイ・デフォルト基盤',
       title: 'ハードコードされたデフォルトパスワードの排除',
       description: '一意の初期パスワード強制または初回起動時の変更を義務付けている',
+      explanation: '出荷時に「admin/admin」などの共通固定パスワードが存在せず、機器ごとに一意か、初回設定が強制される設計です。',
+      examples: [
+        '初回セットアップ画面のバリデーションコード',
+        '個体ごとにシリアル紐付けされた初期パスワードシール'
+      ],
+      presets: [
+        { label: '初回設定強制', value: '初回起動ウィザードにてパスワード設定を強制' },
+        { label: '個体別一意キー', value: 'デバイス個体ごとに一意の初期パスワードをプロビジョニング' }
+      ],
       craRef: 'CRA 附属書I 第I部 (1.2.b), (1.2.d)'
     }
   ]
@@ -106,7 +182,7 @@ export function defaultSbdAttestationForm(): SbdAttestationForm {
     productName: '',
     productVersion: '',
     asserterName: '',
-    asserterRole: 'Product Security / PSIRT Lead',
+    asserterRole: 'Product Security Lead',
     assessmentDate: today,
     generalNotes: '',
     items: itemsDef.map((it) => ({
@@ -122,7 +198,7 @@ export function sbdAttestationWarnings(form: SbdAttestationForm): string[] {
   const w: string[] = []
   if (!form.productName.trim()) w.push('対象製品名')
   if (!form.productVersion.trim()) w.push('製品バージョン')
-  if (!form.asserterName.trim()) w.push('宣言者氏名・組織名')
+  if (!form.asserterName.trim()) w.push('適合宣言者・組織名')
   if (!form.items.some((it) => it.checked)) w.push('確認済みの最低限の証跡（1項目以上選択）')
   return w
 }
