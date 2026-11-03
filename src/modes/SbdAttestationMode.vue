@@ -28,6 +28,12 @@ const checkedCount = computed(() => form.value.items.filter((it) => it.checked).
 const totalCount = computed(() => form.value.items.length)
 const progressPercent = computed(() => Math.round((checkedCount.value / totalCount.value) * 100))
 
+const applyPreset = (item: EvidenceItem, presetValue: string) => {
+  item.evidenceDetail = presetValue
+  item.checked = true
+  showToast('証跡プリセットを自動補完しました')
+}
+
 const resetForm = () => {
   if (window.confirm(ui.resetConfirm || 'すべてのチェックと証跡メモを初期化します。よろしいですか？')) {
     form.value = defaultSbdAttestationForm()
@@ -61,11 +67,19 @@ const tabs = computed<OutputTab[]>(() => [
 <template>
   <main class="cols">
     <section class="panel" aria-label="セキュア・バイ・デザイン アテステーション入力">
-      <h2>{{ ui.title || 'セキュア・バイ・デザイン 最低限の証跡 アテステーション生成' }}</h2>
+      <h2>{{ ui.title || 'セキュア・バイ・デザイン 最低限の証跡 (Minimum Evidence) アテステーション生成' }}</h2>
       <p class="sub-intro">{{ ui.subtitle }}</p>
 
       <div v-if="toastMsg" class="bar toast-bar">
         <span class="status toast-text">{{ toastMsg }}</span>
+      </div>
+
+      <!-- 初心者向け用語解説ボックス -->
+      <div class="guide-box">
+        <p class="guide-title">💡 「アテステーション (適合宣言)」と「最低限の証跡 (Minimum Evidence)」とは？</p>
+        <p class="guide-text">
+          欧州CRAの適合性評価（モジュールA）等において、<strong>「自社製品が意図通り安全に設計・開発・テストされている根拠」</strong>を監査人や顧客に機械可読（CycloneDX CDXA）および文書形式で実証するための構造化データです。リポジトリやCI/CDにある既存のログ・URLを紐付けるだけで宣言書を自動生成できます。
+        </p>
       </div>
 
       <div class="notice-box">
@@ -98,7 +112,7 @@ const tabs = computed<OutputTab[]>(() => [
         </div>
 
         <div class="row">
-          <label>{{ ui.assessmentDate }}
+          <label>{{ ui.assessmentDate || '評価・宣言実施日' }}
             <input type="date" v-model="form.assessmentDate" />
           </label>
         </div>
@@ -127,14 +141,39 @@ const tabs = computed<OutputTab[]>(() => [
           <p class="item-desc">{{ item.description }}</p>
           <span class="cra-badge">CRA 関連要件: {{ item.craRef }}</span>
 
-          <div v-if="item.checked" class="evidence-detail-box">
-            <label class="detail-label">具体的な証跡ログ / URL / ファイルパス:
-              <input
-                type="text"
-                v-model="item.evidenceDetail"
-                placeholder="例: [suspicious link removed] または docs/evidence/sast-log.json"
-              />
-            </label>
+          <!-- ★ Playbook 直伝の解説テキスト (折りたたみ) -->
+          <details class="playbook-details">
+            <summary>📘 Playbook の解説と具体例を見る</summary>
+            <div class="details-content">
+              <p class="details-explanation"><strong>目的・背景:</strong> {{ item.explanation }}</p>
+              <p class="details-examples-title"><strong>該当する具体的証跡の例:</strong></p>
+              <ul>
+                <li v-for="(ex, exIdx) in item.examples" :key="exIdx">{{ ex }}</li>
+              </ul>
+            </div>
+          </details>
+
+          <!-- 具体的証跡の入力欄 & ワンタッププリセット -->
+          <div class="evidence-detail-box">
+            <div class="preset-label-bar">
+              <span class="detail-label">具体的な証跡ログ / URL / ファイルパス:</span>
+              <div class="preset-buttons">
+                <button
+                  v-for="(ps, psIdx) in item.presets"
+                  :key="psIdx"
+                  type="button"
+                  class="btn-preset-chip"
+                  @click="applyPreset(item, ps.value)"
+                >
+                  + {{ ps.label }}
+                </button>
+              </div>
+            </div>
+            <input
+              type="text"
+              v-model="item.evidenceDetail"
+              placeholder="例: [suspicious link removed] または docs/evidence/sast.json"
+            />
           </div>
         </div>
       </div>
@@ -154,6 +193,12 @@ const tabs = computed<OutputTab[]>(() => [
 .sub-intro { margin: 0 0 16px; color: var(--sub); font-size: 0.9rem; }
 .toast-bar { margin-bottom: 12px; }
 .toast-text { color: var(--accent); font-weight: 600; }
+.guide-box {
+  background: rgba(76, 184, 203, 0.08); border: 1px solid var(--accent); border-radius: 6px;
+  padding: 12px; margin-bottom: 14px;
+}
+.guide-title { font-size: 0.88rem; font-weight: bold; color: var(--ink); margin: 0 0 4px 0; }
+.guide-text { font-size: 0.82rem; color: var(--sub); margin: 0; line-height: 1.45; }
 .notice-box {
   background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
   padding: 10px 12px; margin-bottom: 16px; display: flex; gap: 8px; align-items: flex-start;
@@ -183,7 +228,18 @@ const tabs = computed<OutputTab[]>(() => [
 .playbook-tag { font-size: 0.72rem; background: var(--bg); border: 1px solid var(--line); padding: 1px 6px; border-radius: 4px; color: var(--sub); }
 .item-desc { font-size: 0.82rem; color: var(--sub); margin: 6px 0 6px 24px; line-height: 1.35; }
 .cra-badge { font-size: 0.72rem; color: var(--accent); margin-left: 24px; display: inline-block; font-weight: 600; }
-.evidence-detail-box { margin-top: 8px; margin-left: 24px; }
-.detail-label { font-size: 0.78rem; font-weight: normal; color: var(--ink); display: block; }
-.detail-label input { margin-top: 4px; padding: 4px 8px; font-size: 0.8rem; }
+.playbook-details { margin: 8px 0 8px 24px; font-size: 0.82rem; color: var(--sub); }
+.playbook-details summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+.details-content { background: var(--bg); border: 1px solid var(--line); border-radius: 4px; padding: 8px 12px; margin-top: 6px; }
+.details-explanation { margin: 0 0 6px 0; line-height: 1.4; color: var(--ink); }
+.details-examples-title { margin: 0 0 4px 0; color: var(--ink); }
+.details-content ul { margin: 0; padding-left: 1.2em; }
+.details-content li { margin-bottom: 2px; }
+.evidence-detail-box { margin-top: 10px; margin-left: 24px; }
+.preset-label-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+.detail-label { font-size: 0.78rem; font-weight: 600; color: var(--ink); }
+.preset-buttons { display: flex; gap: 4px; flex-wrap: wrap; }
+.btn-preset-chip { font-size: 0.72rem; padding: 2px 6px; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; cursor: pointer; }
+.btn-preset-chip:hover { border-color: var(--accent); color: var(--accent); }
+.evidence-detail-box input { padding: 5px 8px; font-size: 0.82rem; }
 </style>
