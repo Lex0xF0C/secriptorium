@@ -563,8 +563,7 @@ export const I18N_JA: AdvisoryI18n = {
           "title": "報告者への完了通知と謝辞の掲載",
           "description": "報告者へ公開を連絡し、同意に基づき謝辞（Hall of Fame等）を掲載"
         }
-      ]
-    },
+      ],
     "sbdAttestationUi": {
     "title": "セキュア・バイ・デザイン 最低限の証跡 (Minimum Evidence) アテステーション生成",
     "subtitle": "ENISA Playbook 4.13, 4.14 および CRA 要件に基づき、製品のセキュリティ品質を示す最小限の証跡（Minimum Evidence）を人間用・機械処理可能形式で生成します。",
