@@ -49,9 +49,9 @@ export function defaultSbdAttestationForm(): SbdAttestationForm {
         'Excel / Google スプレッドシートの脆弱性管理台帳'
       ],
       presets: [
-        { label: 'GitHub Issueボード', value: '[suspicious link removed]' },
-        { label: 'Jira チケット一覧', value: 'Jira Project (VULN) にてステータス追跡中' },
-        { label: '社内管理台帳', value: '社内セキュリティ管理台帳 (Vulnerability-Log.xlsx) で管理' }
+        { label: 'GitHub Issueボード', value: 'docs/evidence/github-issue-board.md' },
+        { label: 'Jira チケット一覧', value: 'docs/evidence/jira-vulnerability-tickets.pdf' },
+        { label: '社内管理台帳', value: 'docs/evidence/vulnerability-management-log.xlsx' }
       ],
       craRef: 'CRA 附属書I 第II部 (2), (5)'
     },
@@ -67,8 +67,8 @@ export function defaultSbdAttestationForm(): SbdAttestationForm {
         'SLA定義ドキュメント'
       ],
       presets: [
-        { label: '標準SLA設定', value: '緊急: 24時間以内に受領・14日以内修正 / 高: 30日以内修正' },
-        { label: 'CVDポリシー連動', value: 'CVDポリシー記載の目標タイムフレームに準拠' }
+        { label: '標準SLA設定', value: 'docs/evidence/psirt-sla-definition.md' },
+        { label: 'CVDポリシー連動', value: 'docs/evidence/cvd-policy-timeline.md' }
       ],
       craRef: 'CRA 附属書I 第II部 (2)'
     },
@@ -84,9 +84,9 @@ export function defaultSbdAttestationForm(): SbdAttestationForm {
         'GitLab CI / SonarQube のスキャンレポート'
       ],
       presets: [
-        { label: 'GitHub Actions (Trivy)', value: 'GitHub Actions (Trivy Workflow) で毎ビルド実行' },
-        { label: 'Snyk CI スキャン', value: 'Snyk Container & Dependency Scan ログ確認済み' },
-        { label: 'SonarQube ログ', value: 'SonarQube SAST 分析レポート出力あり' }
+        { label: 'GitHub Actions (Trivy)', value: '.github/workflows/trivy-scan.yml' },
+        { label: 'Snyk CI スキャン', value: 'docs/evidence/snyk-container-scan.json' },
+        { label: 'SonarQube ログ', value: 'docs/evidence/sonarqube-sast-report.pdf' }
       ],
       craRef: 'CRA 附属書I 第I部 (1.2.a), 第II部 (1)'
     },
@@ -102,8 +102,8 @@ export function defaultSbdAttestationForm(): SbdAttestationForm {
         'GitHub Release アセット内の bom.json'
       ],
       presets: [
-        { label: 'CycloneDX JSON 保管', value: 'リリースアセット (bom.json / CycloneDX 1.6) として保管' },
-        { label: 'syft 自動生成', value: 'syft ツールにより CI/CD パイプライン内で自動生成' }
+        { label: 'CycloneDX JSON 保管', value: 'build/reports/cyclonedx-bom.json' },
+        { label: 'syft 自動生成', value: 'docs/evidence/syft-sbom-build.log' }
       ],
       craRef: 'CRA 附属書I 第II部 (1)'
     },
@@ -119,10 +119,10 @@ export function defaultSbdAttestationForm(): SbdAttestationForm {
         'GitHub / GitLab の Pull Request レビュー・承認履歴'
       ],
       presets: [
-        { label: 'CODEOWNERS 設定', value: '.github/CODEOWNERS ファイルにてレビュー必須化' },
-        { label: 'PR 承認ログ', value: 'ブランチ保護ルールにより 2名以上の承認要求を強制' }
+        { label: 'CODEOWNERS 設定', value: '.github/CODEOWNERS' },
+        { label: 'PR 承認ログ', value: 'docs/evidence/pr-approval-history.md' }
       ],
-      craRef: 'CRA 附属書I 第I部 (1.2.f)'
+      craRef: 'CRA 附属书I 第I部 (1.2.f)'
     },
     {
       id: 'ev_artifact_signing',
@@ -137,8 +137,8 @@ export function defaultSbdAttestationForm(): SbdAttestationForm {
         'ファームウェア署名検証ログ'
       ],
       presets: [
-        { label: 'Cosign 署名', value: 'Sigstore / Cosign によるビルド証明付きキーレス署名' },
-        { label: 'GPG/PGP 署名', value: 'リリースバイナリに対する GPG 署名 (.sig) を公開' }
+        { label: 'Cosign 署名', value: 'docs/evidence/cosign-signature.bundle' },
+        { label: 'GPG/PGP 署名', value: 'build/releases/firmware.bin.asc' }
       ],
       craRef: 'CRA 附属書I 第II部 (7)'
     },
@@ -154,8 +154,8 @@ export function defaultSbdAttestationForm(): SbdAttestationForm {
         'Docker / Container の read_only: true 設定'
       ],
       presets: [
-        { label: 'Read-only マウント', value: '/etc/fstab でルートパーティションを ro 設定' },
-        { label: 'Docker read_only', value: 'コンテナ起動オプション read_only: true を適用' }
+        { label: 'Read-only マウント', value: 'config/system/fstab' },
+        { label: 'Docker read_only', value: 'deploy/docker-compose.yml' }
       ],
       craRef: 'CRA 附属書I 第I部 (1.2.f), (1.2.j)'
     },
@@ -171,8 +171,8 @@ export function defaultSbdAttestationForm(): SbdAttestationForm {
         '個体ごとにシリアル紐付けされた初期パスワードシール'
       ],
       presets: [
-        { label: '初回設定強制', value: '初回起動ウィザードにてパスワード設定を強制' },
-        { label: '個体別一意キー', value: 'デバイス個体ごとに一意の初期パスワードをプロビジョニング' }
+        { label: '初回設定強制', value: 'src/auth/initial-setup-wizard.ts' },
+        { label: '個体別一意キー', value: 'docs/evidence/device-provisioning-spec.md' }
       ],
       craRef: 'CRA 附属書I 第I部 (1.2.b), (1.2.d)'
     }
