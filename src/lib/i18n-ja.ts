@@ -64,7 +64,7 @@ export interface AdvisoryI18n {
   gnaFields?: Record<string, string>;
   gnaUi?: Record<string, string>;
 
-  // ▼ 【追加】CVD プロセス管理用型定義
+  // ▼ CVD プロセス管理用型定義
   cvdProcessFields?: Record<string, string>;
   cvdProcessUi?: Record<string, string>;
   cvdProcessPhases?: Array<{
@@ -76,6 +76,15 @@ export interface AdvisoryI18n {
       title: string;
       description: string;
     }>;
+  }>;
+  sbdAttestationUi?: Record<string, string>;
+  sbdAttestationItems?: Array<{
+    id: string;
+    playbookId: '4.13' | '4.14' | 'sbd_general';
+    playbookTitle: string;
+    title: string;
+    description: string;
+    craRef: string;
   }>;
 }
 
@@ -105,7 +114,7 @@ export const I18N_JA: AdvisoryI18n = {
     "vcl": "バージョンの確認方法|任意。利用者が自分のバージョンを確認できるように",
     "cwel": "脆弱性の種類（CWE）|候補から選ぶと、説明・脅威の例文が入ります。候補にないときは「候補にないCWE」、分からないときは「CWEを判断できない」を選びます",
     "cweo": "候補にないCWE（直接入力する）",
-    "cweol": "候補にないCWEの直接入力|「CWE-番号 名称」の形で入力（名称は、分かる範囲で）",
+    "cweol": "候補にないCWEの直接入力||「CWE-番号 名称」の形で入力（名称は、分かる範囲で）",
     "cweoph": "例：CWE-1021 （名称は、分かる範囲で）",
     "cweph": "例：CWE-79 クロスサイト・スクリプティング",
     "cwenl": "CWEを判断できない場合の自由記述|脆弱性の種類を、分かる範囲で書く",
@@ -177,7 +186,7 @@ export const I18N_JA: AdvisoryI18n = {
     "copiedSecurityTxt": "security.txt の内容をクリップボードにコピーしました。",
     "dlSecurityTxt": "💾 security.txt をダウンロード",
 
-    // ▼ 【追加】GNA (BCP-06) モード用の UI 文言とタブ切り替え用
+    // GNA (BCP-06) モード用の UI 文言
     "modeGna": "GNA / BCP-06 支援"
   },
   "sev": {
@@ -417,7 +426,6 @@ export const I18N_JA: AdvisoryI18n = {
       }
     }
   ],
-  // ▼ 【追加】GNA (BCP-06) 支援用の項目定義
   "gnaFields": {
     "gnaId": "GNA識別子 (GNA ID)|割り当てられた一意のGNA識別子（例: GNA-001）",
     "organization": "組織名 (Organization)|GNAを運営する組織またはベンダーの名称",
@@ -432,7 +440,6 @@ export const I18N_JA: AdvisoryI18n = {
     "dlGnaJson": "💾 Conformance JSON をダウンロード",
     "gnaConstraintNotice": "🔒 完全ブラウザ完結モード：ツール側でデータやIDの重複履歴は保持されません。重複排除やバックアップは自社の管理台帳（Git等）で必ず行ってください。"
   },
-  // ▼ 【追加】CVD プロセス管理用 UI 辞書
   "cvdProcessFields": {
     "cveId": "管理番号 / CVE ID|案件を特定する識別子（例: CVE-2026-9999 / CVD-2026-001）",
     "title": "脆弱性件名・タイトル|対象製品や脆弱性の概要（例: ○○製品における認証回避の脆弱性）",
@@ -556,5 +563,19 @@ export const I18N_JA: AdvisoryI18n = {
         }
       ]
     }
-  ]
+  ],
+  "sbdAttestationUi": {
+    "title": "セキュア・バイ・デザイン 最低限の証跡 (Minimum Evidence) アテステーション生成",
+    "subtitle": "ENISA Playbook 4.13, 4.14 および CRA 要件に基づき、製品のセキュリティ品質を示す最小限の証跡（Minimum Evidence）を人間用・機械処理可能形式で生成します。",
+    "noticeBadge": "🔒 完全ブラウザ完結：作成されたアテステーション・証跡宣言データはサーバーへ送信されません。生成された Markdown や CycloneDX 1.6 CDXA (JSON) を保存して管理してください。",
+    "productName": "対象製品名|証跡を宣言する製品・モジュール名（例: SafeGate-X1）",
+    "productVersion": "製品バージョン|例: v2.1.0 / Firmware 1.0.4",
+    "asserterName": "適合宣言者・組織名|適合性を宣言する個人・チーム・企業名（例: 株式会社サンプル PSIRT）",
+    "asserterRole": "担当役割|例: Product Security Lead / 開発責任者",
+    "assessmentDate": "評価・宣言実施日",
+    "checklistTitle": "✅ 最低限の証跡（Minimum Evidence）チェックリスト",
+    "generalNotes": "特記事項・補足コメント|テスト結果のURL、内部Wiki、例外事項など",
+    "btnReset": "🔄 チェックリストを初期化",
+    "resetConfirm": "すべてのチェックと証跡メモを初期化します。よろしいですか？"
+  }
 };
