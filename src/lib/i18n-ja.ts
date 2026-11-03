@@ -578,5 +578,4 @@ export const I18N_JA: AdvisoryI18n = {
     "btnReset": "🔄 チェックリストを初期化",
     "resetConfirm": "すべてのチェックと証跡メモを初期化します。よろしいですか？"
   }
-  ]
 };
