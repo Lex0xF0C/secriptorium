@@ -146,7 +146,7 @@ const tabs = computed<OutputTab[]>(() => [
         <div v-else class="paste-mode-wrap">
           <p class="hint">{{ t.vex?.pasteGuideIntro }}</p>
           <textarea v-model="pasteText" rows="5" :placeholder="t.vex?.pastePh"></textarea>
-          <button type="button" class="primary" @click="importTsv" style="margin-top: 8px;">
+          <button type="button" class="primary btn-import" @click="importTsv">
             {{ t.vex?.btnImportAppend }}
           </button>
         </div>
@@ -166,4 +166,5 @@ const tabs = computed<OutputTab[]>(() => [
 .vex-product-card { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; margin-bottom: 8px; background: var(--bg); }
 .vex-product-card .r1 { display: grid; grid-template-columns: 1.6fr 1fr auto; gap: 8px; margin-bottom: 6px; }
 .vex-product-card .r2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn-import { margin-top: 8px; }
 </style>
