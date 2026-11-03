@@ -1,3 +1,4 @@
+<!-- src/App.vue 抜粋 -->
 <script setup lang="ts">
 import { ref, shallowRef } from 'vue'
 import AdvisoryMode from './modes/AdvisoryMode.vue'
@@ -8,6 +9,7 @@ import SecurityTxtMode from './modes/SecurityTxtMode.vue'
 import CvdPolicyMode from './modes/CvdPolicyMode.vue'
 import CvdProcessMode from './modes/CvdProcessMode.vue'
 import GnaMode from './modes/GnaMode.vue'
+import CraGuide from './components/CraGuide.vue' // ★ CRAガイドコンポーネントを追加
 import { I18N_JA } from './lib/i18n-ja'
 
 type ModeKey = 'advisory' | 'vex' | 'sbom' | 'cvss' | 'securitytxt' | 'cvd' | 'cvdprocess' | 'gna'
@@ -32,6 +34,11 @@ const modes: ModeItem[] = [
   { key: 'cvdprocess', label: 'CVDプロセス管理', component: CvdProcessMode, enabled: true },
   { key: 'gna', label: I18N_JA.ui?.modeGna || 'GNA / BCP-06 支援', component: GnaMode, enabled: false }
 ]
+
+const switchModeByKey = (key: ModeKey) => {
+  const mode = modes.find(m => m.key === key)
+  if (mode) switchMode(mode)
+}
 
 const switchMode = (mode: ModeItem) => {
   if (!mode.enabled || !mode.component) return
@@ -60,6 +67,9 @@ const switchMode = (mode: ModeItem) => {
       </button>
     </div>
   </header>
+
+  <!-- ★ CRA適合ナビゲーションガイド -->
+  <CraGuide :current-mode="currentModeKey" @select-mode="switchModeByKey" />
 
   <main>
     <KeepAlive>
