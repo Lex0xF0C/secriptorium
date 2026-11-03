@@ -501,3 +501,16 @@ export function demoSbomForm(): SbomForm {
     ],
   }
 }
+
+// ---- エイリアス（後方互換性および画面連携用） ---------------------------
+
+export const defaultForm = emptySbomForm
+export const loadDemoForm = demoSbomForm
+
+export function parseTsvComponents(raw: string): SbomComponent[] {
+  return parseComponents(raw).components
+}
+
+export function parseTsvStatements(_raw: string): VexStatement[] {
+  return []
+}

@@ -1,7 +1,12 @@
+<!-- src/modes/SecurityTxtMode.vue -->
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { I18N_JA } from '../lib/i18n-ja'
+import { useI18n } from '../lib/i18n'
 import { generateSecurityTxt, type SecurityTxtForm } from '../lib/security-txt'
+import OutputPanel from '../components/OutputPanel.vue'
+import type { OutputTab } from '../lib/output'
+
+const { t } = useI18n()
 
 const form = ref<SecurityTxtForm>({
   contact: 'mailto:security@example.com',
@@ -14,10 +19,9 @@ const form = ref<SecurityTxtForm>({
   hiring: ''
 })
 
-const toastMessage = ref('')
-
+// 言語設定に応じてフィールド名とヒントを動的パース
 const fields = computed(() => {
-  const raw = I18N_JA.securityTxtFields as Record<string, string>
+  const raw = (t.value.securityTxtFields || {}) as Record<string, string>
   return Object.entries(raw).map(([key, val]) => {
     const [label, hint] = val.split('|')
     return {
@@ -30,36 +34,23 @@ const fields = computed(() => {
 
 const outputText = computed(() => generateSecurityTxt(form.value))
 
-const handleCopy = async () => {
-  try {
-    await navigator.clipboard.writeText(outputText.value)
-    toastMessage.value = I18N_JA.ui.copiedSecurityTxt || 'コピーしました'
-    setTimeout(() => { toastMessage.value = '' }, 3000)
-  } catch {
-    toastMessage.value = 'コピーに失敗しました'
+const tabs = computed<OutputTab[]>(() => [
+  {
+    id: 'securitytxt',
+    label: 'security.txt',
+    content: outputText.value,
+    ext: '.txt',
+    mime: 'text/plain;charset=utf-8'
   }
-}
-
-const handleDownload = () => {
-  const blob = new Blob([outputText.value], { type: 'text/plain;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = 'security.txt'
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
-}
+])
 </script>
 
 <template>
-  <!-- style.css の .cols をそのまま利用して左右2カラムに分割 -->
   <main class="cols">
     <!-- 左側：入力パネル -->
     <div class="panel">
-      <h2>{{ I18N_JA.ui.securityTxtTitle }}</h2>
-      <p class="hint">{{ I18N_JA.ui.securityTxtSubtitle }}</p>
+      <h2>{{ t.ui.securityTxtTitle }}</h2>
+      <p class="hint">{{ t.ui.securityTxtSubtitle }}</p>
 
       <form @submit.prevent>
         <div v-for="f in fields" :key="f.key">
@@ -68,6 +59,7 @@ const handleDownload = () => {
             v-if="f.key === 'contact'"
             :id="f.key"
             v-model="form[f.key]"
+            rows="2"
           ></textarea>
           <input
             v-else
@@ -80,18 +72,7 @@ const handleDownload = () => {
       </form>
     </div>
 
-    <!-- 右側：プレビュー・出力パネル (.out でsticky化) -->
-    <div class="panel out">
-      <div class="bar">
-        <h3>プレビュー (.well-known/security.txt)</h3>
-      </div>
-      <div class="bar">
-        <button type="button" class="primary" @click="handleCopy">{{ I18N_JA.ui.copySecurityTxt }}</button>
-        <button type="button" @click="handleDownload">{{ I18N_JA.ui.dlSecurityTxt }}</button>
-      </div>
-
-      <pre><code>{{ outputText }}</code></pre>
-      <p v-if="toastMessage" class="hint" role="status" style="color: var(--accent);">{{ toastMessage }}</p>
-    </div>
+    <!-- 右側：プレビュー・出力パネル -->
+    <OutputPanel class="out" :tabs="tabs" base-name="security" />
   </main>
 </template>

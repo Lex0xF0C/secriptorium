@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { I18N_JA } from '../lib/i18n-ja'
+import { useI18n } from '../lib/i18n'
 import {
   defaultSbdAttestationForm,
   sbdAttestationWarnings,
@@ -12,8 +12,29 @@ import {
 import OutputPanel from '../components/OutputPanel.vue'
 import type { OutputTab } from '../lib/output'
 
-const ui = I18N_JA.sbdAttestationUi || {}
+const { t } = useI18n()
 const form = ref<SbdAttestationForm>(defaultSbdAttestationForm())
+
+// 言語切替に応じて表示用アイテム配列を更新
+const localizedItems = computed<EvidenceItem[]>(() => {
+  const itemsDef = t.value.sbdAttestationItems || []
+  return form.value.items.map((it) => {
+    const matched = itemsDef.find((def) => def.id === it.id)
+    if (matched) {
+      return {
+        ...it,
+        playbookTitle: matched.playbookTitle,
+        title: matched.title,
+        description: matched.description,
+        explanation: matched.explanation,
+        examples: matched.examples,
+        presets: matched.presets,
+        craRef: matched.craRef
+      }
+    }
+    return it
+  })
+})
 
 const toastMsg = ref('')
 let toastTimer: number | null = null
@@ -29,15 +50,18 @@ const totalCount = computed(() => form.value.items.length)
 const progressPercent = computed(() => Math.round((checkedCount.value / totalCount.value) * 100))
 
 const applyPreset = (item: EvidenceItem, presetValue: string) => {
-  item.evidenceDetail = presetValue
-  item.checked = true
-  showToast('証跡プリセットを自動補完しました')
+  const target = form.value.items.find((i) => i.id === item.id)
+  if (target) {
+    target.evidenceDetail = presetValue
+    target.checked = true
+  }
+  showToast(t.value.ui.presetSuccess || 'Inserted preset')
 }
 
 const resetForm = () => {
-  if (window.confirm(ui.resetConfirm || 'すべてのチェックと証跡メモを初期化します。よろしいですか？')) {
+  if (window.confirm(t.value.sbdAttestationUi?.resetConfirm || 'Reset checklist?')) {
     form.value = defaultSbdAttestationForm()
-    showToast('初期化しました')
+    showToast('Reset completed')
   }
 }
 
@@ -48,7 +72,7 @@ const warnings = computed<string[]>(() => sbdAttestationWarnings(form.value))
 const tabs = computed<OutputTab[]>(() => [
   {
     id: 'markdown',
-    label: 'Markdown 証跡報告書',
+    label: 'Markdown Evidence Report',
     content: markdownOutput.value,
     ext: '.md',
     mime: 'text/markdown;charset=utf-8',
@@ -56,7 +80,7 @@ const tabs = computed<OutputTab[]>(() => [
   },
   {
     id: 'cdxa_json',
-    label: 'CycloneDX 1.6 CDXA (機械可読JSON)',
+    label: 'CycloneDX 1.6 CDXA (Machine JSON)',
     content: cdxaJsonOutput.value,
     ext: '.json',
     mime: 'application/json;charset=utf-8'
@@ -66,53 +90,42 @@ const tabs = computed<OutputTab[]>(() => [
 
 <template>
   <main class="cols">
-    <section class="panel" aria-label="セキュア・バイ・デザイン アテステーション入力">
-      <h2>{{ ui.title || 'セキュア・バイ・デザイン 最低限の証跡 (Minimum Evidence) アテステーション生成' }}</h2>
-      <p class="sub-intro">{{ ui.subtitle }}</p>
+    <section class="panel" aria-label="Secure by Design Attestation Input">
+      <h2>{{ t.sbdAttestationUi?.title }}</h2>
+      <p class="sub-intro">{{ t.sbdAttestationUi?.subtitle }}</p>
 
       <div v-if="toastMsg" class="bar toast-bar">
         <span class="status toast-text">{{ toastMsg }}</span>
       </div>
 
-      <!-- 初心者向け用語解説ボックス -->
-      <div class="guide-box">
-        <p class="guide-title">💡 「アテステーション (適合宣言)」と「最低限の証跡 (Minimum Evidence)」とは？</p>
-        <p class="guide-text">
-          欧州CRAの適合性評価（モジュールA）等において、<strong>「自社製品が意図通り安全に設計・開発・テストされている根拠」</strong>を監査人や顧客に機械可読（CycloneDX CDXA）および文書形式で実証するための構造化データです。リポジトリやCI/CDにある既存のログ・URLを紐付けるだけで宣言書を自動生成できます。
-        </p>
-      </div>
-
       <div class="notice-box">
         <span class="notice-icon">🔒</span>
-        <p class="notice-text">{{ ui.noticeBadge }}</p>
+        <p class="notice-text">{{ t.sbdAttestationUi?.noticeBadge }}</p>
       </div>
 
       <!-- 基本情報 -->
       <fieldset class="section-box">
-        <legend>📋 対象製品と宣言者情報</legend>
+        <legend>📋 {{ t.sbdAttestationUi?.productName?.split('|')[0] }}</legend>
         <div class="row">
-          <label>{{ ui.productName?.split('|') || '対象製品名' }}
-            <span class="hint">{{ ui.productName?.split('|')[1] }}</span>
-            <input type="text" v-model="form.productName" placeholder="例: SafeGate-X1" />
+          <label>{{ t.sbdAttestationUi?.productName?.split('|')[0] }}
+            <input type="text" v-model="form.productName" placeholder="e.g., SafeGate-X1" />
           </label>
-          <label>{{ ui.productVersion?.split('|') || '製品バージョン' }}
-            <span class="hint">{{ ui.productVersion?.split('|')[1] }}</span>
-            <input type="text" v-model="form.productVersion" placeholder="例: v2.1.0" />
+          <label>{{ t.sbdAttestationUi?.productVersion?.split('|')[0] }}
+            <input type="text" v-model="form.productVersion" placeholder="e.g., v2.1.0" />
           </label>
         </div>
 
         <div class="row">
-          <label>{{ ui.asserterName?.split('|') || '適合宣言者・組織名' }}
-            <span class="hint">{{ ui.asserterName?.split('|')[1] }}</span>
-            <input type="text" v-model="form.asserterName" placeholder="例: 株式会社サンプル PSIRT" />
+          <label>{{ t.sbdAttestationUi?.asserterName?.split('|')[0] }}
+            <input type="text" v-model="form.asserterName" placeholder="e.g., Sample Corp PSIRT" />
           </label>
-          <label>{{ ui.asserterRole?.split('|') || '担当役割' }}
-            <input type="text" v-model="form.asserterRole" placeholder="例: Product Security Lead" />
+          <label>{{ t.sbdAttestationUi?.asserterRole?.split('|')[0] }}
+            <input type="text" v-model="form.asserterRole" placeholder="e.g., Product Security Lead" />
           </label>
         </div>
 
         <div class="row">
-          <label>{{ ui.assessmentDate || '評価・宣言実施日' }}
+          <label>{{ t.sbdAttestationUi?.assessmentDate }}
             <input type="date" v-model="form.assessmentDate" />
           </label>
         </div>
@@ -121,42 +134,49 @@ const tabs = computed<OutputTab[]>(() => [
       <!-- 証跡充足率バー -->
       <div class="progress-box">
         <div class="progress-header">
-          <span class="progress-title">📊 証跡（Minimum Evidence）充足率: <strong>{{ progressPercent }}%</strong> ({{ checkedCount }} / {{ totalCount }})</span>
-          <button type="button" class="btn-reset" @click="resetForm">{{ ui.btnReset || '🔄 初期化' }}</button>
+          <span class="progress-title">📊 Minimum Evidence Progress: <strong>{{ progressPercent }}%</strong> ({{ checkedCount }} / {{ totalCount }})</span>
+          <button type="button" class="btn-reset" @click="resetForm">{{ t.sbdAttestationUi?.btnReset }}</button>
         </div>
         <progress class="sbd-progress-bar" max="100" :value="progressPercent"></progress>
       </div>
 
       <!-- チェックリスト -->
       <div class="checklist-section">
-        <h3>{{ ui.checklistTitle || '✅ 最低限の証跡（Minimum Evidence）チェックリスト' }}</h3>
+        <h3>{{ t.sbdAttestationUi?.checklistTitle }}</h3>
 
-        <div v-for="item in form.items" :key="item.id" class="evidence-card" :class="{ checked: item.checked }">
+        <div v-for="item in localizedItems" :key="item.id" class="evidence-card" :class="{ checked: item.checked }">
           <label class="evidence-checkbox">
-            <input type="checkbox" v-model="item.checked" />
+            <input
+              type="checkbox"
+              :checked="form.items.find(i => i.id === item.id)?.checked"
+              @change="(e) => {
+                const target = form.items.find(i => i.id === item.id);
+                if (target) target.checked = (e.target as HTMLInputElement).checked;
+              }"
+            />
             <span class="item-title">{{ item.title }}</span>
             <span class="playbook-tag">{{ item.playbookTitle }}</span>
           </label>
 
           <p class="item-desc">{{ item.description }}</p>
-          <span class="cra-badge">CRA 関連要件: {{ item.craRef }}</span>
+          <span class="cra-badge">CRA Ref: {{ item.craRef }}</span>
 
-          <!-- ★ Playbook 直伝の解説テキスト (折りたたみ) -->
+          <!-- Playbook 解説 -->
           <details class="playbook-details">
-            <summary>📘 Playbook の解説と具体例を見る</summary>
+            <summary>📘 Playbook Guidance & Examples</summary>
             <div class="details-content">
-              <p class="details-explanation"><strong>目的・背景:</strong> {{ item.explanation }}</p>
-              <p class="details-examples-title"><strong>該当する具体的証跡の例:</strong></p>
+              <p class="details-explanation"><strong>Objective:</strong> {{ item.explanation }}</p>
+              <p class="details-examples-title"><strong>Evidence Examples:</strong></p>
               <ul>
                 <li v-for="(ex, exIdx) in item.examples" :key="exIdx">{{ ex }}</li>
               </ul>
             </div>
           </details>
 
-          <!-- 具体的証跡の入力欄 & ワンタッププリセット -->
+          <!-- 入力欄 & プリセット -->
           <div class="evidence-detail-box">
             <div class="preset-label-bar">
-              <span class="detail-label">具体的な証跡ログ / URL / ファイルパス:</span>
+              <span class="detail-label">Evidence Log / URL / Path:</span>
               <div class="preset-buttons">
                 <button
                   v-for="(ps, psIdx) in item.presets"
@@ -171,8 +191,12 @@ const tabs = computed<OutputTab[]>(() => [
             </div>
             <input
               type="text"
-              v-model="item.evidenceDetail"
-              placeholder="例: docs/evidence/trivy-scan-report.json または .github/workflows/sast.yml"
+              :value="form.items.find(i => i.id === item.id)?.evidenceDetail"
+              @input="(e) => {
+                const target = form.items.find(i => i.id === item.id);
+                if (target) target.evidenceDetail = (e.target as HTMLInputElement).value;
+              }"
+              placeholder="e.g., docs/evidence/scan-report.json"
             />
           </div>
         </div>
@@ -180,8 +204,8 @@ const tabs = computed<OutputTab[]>(() => [
 
       <!-- 特記事項 -->
       <fieldset class="section-box">
-        <legend>📝 {{ ui.generalNotes?.split('|') || '特記事項・補足コメント' }}</legend>
-        <textarea v-model="form.generalNotes" rows="3" placeholder="例外事項や補足説明を自由記述できます"></textarea>
+        <legend>📝 {{ t.sbdAttestationUi?.generalNotes?.split('|')[0] }}</legend>
+        <textarea v-model="form.generalNotes" rows="3" placeholder="Optional notes"></textarea>
       </fieldset>
     </section>
 
@@ -193,12 +217,6 @@ const tabs = computed<OutputTab[]>(() => [
 .sub-intro { margin: 0 0 16px; color: var(--sub); font-size: 0.9rem; }
 .toast-bar { margin-bottom: 12px; }
 .toast-text { color: var(--accent); font-weight: 600; }
-.guide-box {
-  background: rgba(76, 184, 203, 0.08); border: 1px solid var(--accent); border-radius: 6px;
-  padding: 12px; margin-bottom: 14px;
-}
-.guide-title { font-size: 0.88rem; font-weight: bold; color: var(--ink); margin: 0 0 4px 0; }
-.guide-text { font-size: 0.82rem; color: var(--sub); margin: 0; line-height: 1.45; }
 .notice-box {
   background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
   padding: 10px 12px; margin-bottom: 16px; display: flex; gap: 8px; align-items: flex-start;
