@@ -9,10 +9,11 @@ import SecurityTxtMode from './modes/SecurityTxtMode.vue'
 import CvdPolicyMode from './modes/CvdPolicyMode.vue'
 import CvdProcessMode from './modes/CvdProcessMode.vue'
 import GnaMode from './modes/GnaMode.vue'
+import SbdAttestationMode from './modes/SbdAttestationMode.vue'
 import CraGuide from './components/CraGuide.vue' // ★ CRAガイドコンポーネントを追加
 import { I18N_JA } from './lib/i18n-ja'
 
-type ModeKey = 'advisory' | 'vex' | 'sbom' | 'cvss' | 'securitytxt' | 'cvd' | 'cvdprocess' | 'gna'
+type ModeKey = 'advisory' | 'vex' | 'sbom' | 'cvss' | 'securitytxt' | 'cvd' | 'cvdprocess' | 'sbdattestation' |'gna'
 
 interface ModeItem {
   key: ModeKey
@@ -32,6 +33,7 @@ const modes: ModeItem[] = [
   { key: 'securitytxt', label: 'security.txt 作成', component: SecurityTxtMode, enabled: true },
   { key: 'cvd', label: 'CVDポリシー', component: CvdPolicyMode, enabled: true },
   { key: 'cvdprocess', label: 'CVDプロセス管理', component: CvdProcessMode, enabled: true },
+  { key: 'sbdattestation', label: 'SbD 最低限の証跡 (Minimum Evidence)', component: SbdAttestationMode, enabled: true },
   { key: 'gna', label: I18N_JA.ui?.modeGna || 'GNA / BCP-06 支援', component: GnaMode, enabled: false }
 ]
 
