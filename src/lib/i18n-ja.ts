@@ -64,7 +64,8 @@ export interface AdvisoryI18n {
   gnaFields?: Record<string, string>;
   gnaUi?: Record<string, string>;
 
-  // ▼ CVD プロセス管理用型定義
+  // ▼ CRAガイド / CVDプロセス / セキュア・バイ・デザイン証跡 用の型定義
+  craGuideUi?: Record<string, string>;
   cvdProcessFields?: Record<string, string>;
   cvdProcessUi?: Record<string, string>;
   cvdProcessPhases?: Array<{
@@ -84,6 +85,12 @@ export interface AdvisoryI18n {
     playbookTitle: string;
     title: string;
     description: string;
+    explanation: string;
+    examples: string[];
+    presets: Array<{
+      label: string;
+      value: string;
+    }>;
     craRef: string;
   }>;
 }
@@ -114,7 +121,7 @@ export const I18N_JA: AdvisoryI18n = {
     "vcl": "バージョンの確認方法|任意。利用者が自分のバージョンを確認できるように",
     "cwel": "脆弱性の種類（CWE）|候補から選ぶと、説明・脅威の例文が入ります。候補にないときは「候補にないCWE」、分からないときは「CWEを判断できない」を選びます",
     "cweo": "候補にないCWE（直接入力する）",
-    "cweol": "候補にないCWEの直接入力||「CWE-番号 名称」の形で入力（名称は、分かる範囲で）",
+    "cweol": "候補にないCWEの直接入力|「CWE-番号 名称」の形で入力（名称は、分かる範囲で）",
     "cweoph": "例：CWE-1021 （名称は、分かる範囲で）",
     "cweph": "例：CWE-79 クロスサイト・スクリプティング",
     "cwenl": "CWEを判断できない場合の自由記述|脆弱性の種類を、分かる範囲で書く",
@@ -187,7 +194,12 @@ export const I18N_JA: AdvisoryI18n = {
     "dlSecurityTxt": "💾 security.txt をダウンロード",
 
     // GNA (BCP-06) モード用の UI 文言
-    "modeGna": "GNA / BCP-06 支援"
+    "modeGna": "GNA / BCP-06 支援",
+
+    // 新規モード切り替え用タブ文言
+    "modeCvdProcess": "CVDプロセス管理",
+    "modeSbdAttestation": "SbD 最低限の証跡 (Minimum Evidence)",
+    "modeCraGuide": "CRA適合ロードマップ"
   },
   "sev": {
     "critical": "緊急",
@@ -440,6 +452,18 @@ export const I18N_JA: AdvisoryI18n = {
     "dlGnaJson": "💾 Conformance JSON をダウンロード",
     "gnaConstraintNotice": "🔒 完全ブラウザ完結モード：ツール側でデータやIDの重複履歴は保持されません。重複排除やバックアップは自社の管理台帳（Git等）で必ず行ってください。"
   },
+  "craGuideUi": {
+    "title": "CRA（欧州サイバーレジリエンス法）対応ロードマップ",
+    "subtitle": "欧州に輸出・展開するデジタル要素製品で求められる脆弱性管理プロセス（CRA附属書I）を4ステップで作成・運用できます。",
+    "step1Title": "報告窓口の公開",
+    "step1Desc": "外部研究者やユーザーが脆弱性を安全に報告できる連絡先（RFC 9116）を公開します。",
+    "step2Title": "CVD方針の策定",
+    "step2Desc": "報告受付時の対応ルール、タイムライン、免責条項（セーフハーバー）を定義します。",
+    "step3Title": "部品表 (SBOM) の整備",
+    "step3Desc": "製品に含まれるオープンソースやサードパーティ部品（CycloneDX）を可視化します。",
+    "step4Title": "脆弱性対応と公表",
+    "step4Desc": "内部進捗を管理し、製品への影響（VEX）や修正アドバイザリを公開します。"
+  },
   "cvdProcessFields": {
     "cveId": "管理番号 / CVE ID|案件を特定する識別子（例: CVE-2026-9999 / CVD-2026-001）",
     "title": "脆弱性件名・タイトル|対象製品や脆弱性の概要（例: ○○製品における認証回避の脆弱性）",
@@ -577,5 +601,147 @@ export const I18N_JA: AdvisoryI18n = {
     "generalNotes": "特記事項・補足コメント|テスト結果のURL、内部Wiki、例外事項など",
     "btnReset": "🔄 チェックリストを初期化",
     "resetConfirm": "すべてのチェックと証跡メモを初期化します。よろしいですか？"
-  }
+  },
+  "sbdAttestationItems": [
+    {
+      "id": "ev_vuln_board",
+      "playbookId": "4.13",
+      "playbookTitle": "4.13 脆弱性管理とパッチ管理",
+      "title": "脆弱性追跡ボード／登録簿の維持",
+      "description": "発見・報告された脆弱性の深刻度、担当者、目標日、ステータスを管理している",
+      "explanation": "単にパッチを当てるだけでなく、報告から修正までの責任者や期限が明確に追跡可能であることを監査人や顧客へ示すための要件です。",
+      "examples": [
+        "GitHub Issues / GitHub Projects の脆弱性管理ボード",
+        "Jira / Redmine のセキュリティチケット一覧",
+        "Excel / Google スプレッドシートの脆弱性管理台帳"
+      ],
+      "presets": [
+        { "label": "GitHub Issueボード", "value": "docs/evidence/github-issue-board.md" },
+        { "label": "Jira チケット一覧", "value": "docs/evidence/jira-vulnerability-tickets.pdf" },
+        { "label": "社内管理台帳", "value": "docs/evidence/vulnerability-management-log.xlsx" }
+      ],
+      "craRef": "CRA 附属書I 第II部 (2), (5)"
+    },
+    {
+      "id": "ev_sla_defined",
+      "playbookId": "4.13",
+      "playbookTitle": "4.13 脆弱性管理とパッチ管理",
+      "title": "パッチ修正 SLA の定義",
+      "description": "深刻度に応じたトリアージ時間および是正／リリース目標SLAを定めている",
+      "explanation": "脆弱性受領後、放置されずに規定時間内に対応が開始される約束（SLA）が存在することを証明します。",
+      "examples": [
+        "CVDポリシー内またはPSIRT運用要領に明記された目標時間（例: 緊急24時間以内、高14日以内）",
+        "SLA定義ドキュメント"
+      ],
+      "presets": [
+        { "label": "標準SLA設定", "value": "docs/evidence/psirt-sla-definition.md" },
+        { "label": "CVDポリシー連動", "value": "docs/evidence/cvd-policy-timeline.md" }
+      ],
+      "craRef": "CRA 附属書I 第II部 (2)"
+    },
+    {
+      "id": "ev_scan_ci",
+      "playbookId": "4.13",
+      "playbookTitle": "4.13 脆弱性管理とパッチ管理",
+      "title": "CI/CD での自動スキャン実行 (SAST / 依存関係)",
+      "description": "ビルド・リリース時に静的解析および依存関係スキャンが自動実行されている",
+      "explanation": "コード変更やリリースごとに、ツールが自動で既知の脆弱性や不具合をチェックしていることを示します。",
+      "examples": [
+        "GitHub Actions (Trivy / Snyk / CodeQL / Dependency Review) の実行ログ",
+        "GitLab CI / SonarQube のスキャンレポート"
+      ],
+      "presets": [
+        { "label": "GitHub Actions (Trivy)", "value": ".github/workflows/trivy-scan.yml" },
+        { "label": "Snyk CI スキャン", "value": "docs/evidence/snyk-container-scan.json" },
+        { "label": "SonarQube ログ", "value": "docs/evidence/sonarqube-sast-report.pdf" }
+      ],
+      "craRef": "CRA 附属書I 第I部 (1.2.a), 第II部 (1)"
+    },
+    {
+      "id": "ev_sbom_generation",
+      "playbookId": "4.14",
+      "playbookTitle": "4.14 サプライチェーンの管理策",
+      "title": "リリースごとの機械可読 SBOM (CycloneDX) 保管",
+      "description": "リリース成果物とともに機械可読形式の SBOM が生成・保管されている",
+      "explanation": "出荷した製品にどのOSS部品が含まれているか、後から検索・特定できる状態であることを示します。",
+      "examples": [
+        "ビルド時に生成された CycloneDX 1.6 JSON ファイル",
+        "GitHub Release アセット内の bom.json"
+      ],
+      "presets": [
+        { "label": "CycloneDX JSON 保管", "value": "build/reports/cyclonedx-bom.json" },
+        { "label": "syft 自動生成", "value": "docs/evidence/syft-sbom-build.log" }
+      ],
+      "craRef": "CRA 附属書I 第II部 (1)"
+    },
+    {
+      "id": "ev_peer_review",
+      "playbookId": "4.14",
+      "playbookTitle": "4.14 サプライチェーンの管理策",
+      "title": "重要コードのコードレビュー (CODEOWNERS / ピア承認)",
+      "description": "セキュリティに影響するコード変更に対し、担当者の承認が必須化されている",
+      "explanation": "単独の開発者が勝手に悪意あるコードや不正な設定を本番に紛れ込ませられない仕組みを実証します。",
+      "examples": [
+        "リポジトリ内の CODEOWNERS ファイル",
+        "GitHub / GitLab の Pull Request レビュー・承認履歴"
+      ],
+      "presets": [
+        { "label": "CODEOWNERS 設定", "value": ".github/CODEOWNERS" },
+        { "label": "PR 承認ログ", "value": "docs/evidence/pr-approval-history.md" }
+      ],
+      "craRef": "CRA 附属書I 第I部 (1.2.f)"
+    },
+    {
+      "id": "ev_artifact_signing",
+      "playbookId": "4.14",
+      "playbookTitle": "4.14 サプライチェーンの管理策",
+      "title": "ビルド成果物・パッチへの暗号署名",
+      "description": "配布されるファームウェアやバイナリに暗号署名が付与され完全性が検証可能",
+      "explanation": "ユーザーや機器がアップデートを適用する際、途中で改ざんされていないことを検証できる根拠です。",
+      "examples": [
+        "Sigstore Cosign によるコンテナ / バイナリ署名",
+        "PGP / GPG 署名ファイル (.asc)",
+        "ファームウェア署名検証ログ"
+      ],
+      "presets": [
+        { "label": "Cosign 署名", "value": "docs/evidence/cosign-signature.bundle" },
+        { "label": "GPG/PGP 署名", "value": "build/releases/firmware.bin.asc" }
+      ],
+      "craRef": "CRA 附属書I 第II部 (7)"
+    },
+    {
+      "id": "ev_readonly_fs",
+      "playbookId": "sbd_general",
+      "playbookTitle": "セキュア・バイ・デフォルト基盤",
+      "title": "ルートファイルシステムの読み取り専用化 (Read-only FS)",
+      "description": "不変なファイルシステム構成によりマルウェアの永続化・改ざんを防ぐ",
+      "explanation": "万が一攻撃者に侵入されても、システム領域のファイルを書き換えられない（マルウェアを居座らせない）堅牢化設計です。",
+      "examples": [
+        "Linux パーティションテーブルの / (ro) マウント設定",
+        "Docker / Container の read_only: true 設定"
+      ],
+      "presets": [
+        { "label": "Read-only マウント", "value": "config/system/fstab" },
+        { "label": "Docker read_only", "value": "deploy/docker-compose.yml" }
+      ],
+      "craRef": "CRA 附属書I 第I部 (1.2.f), (1.2.j)"
+    },
+    {
+      "id": "ev_no_default_credentials",
+      "playbookId": "sbd_general",
+      "playbookTitle": "セキュア・バイ・デフォルト基盤",
+      "title": "ハードコードされたデフォルトパスワードの排除",
+      "description": "一意の初期パスワード強制または初回起動時の変更を義務付けている",
+      "explanation": "出荷時に「admin/admin」などの共通固定パスワードが存在せず、機器ごとに一意か、初回設定が強制される設計です。",
+      "examples": [
+        "初回セットアップ画面のバリデーションコード",
+        "個体ごとにシリアル紐付けされた初期パスワードシール"
+      ],
+      "presets": [
+        { "label": "初回設定強制", "value": "src/auth/initial-setup-wizard.ts" },
+        { "label": "個体別一意キー", "value": "docs/evidence/device-provisioning-spec.md" }
+      ],
+      "craRef": "CRA 附属書I 第I部 (1.2.b), (1.2.d)"
+    }
+  ]
 };
