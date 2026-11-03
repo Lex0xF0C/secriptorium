@@ -172,7 +172,7 @@ const tabs = computed<OutputTab[]>(() => [
             <input
               type="text"
               v-model="item.evidenceDetail"
-              placeholder="例: [suspicious link removed] または docs/evidence/sast.json"
+              placeholder="例: docs/evidence/trivy-scan-report.json または .github/workflows/sast.yml"
             />
           </div>
         </div>
