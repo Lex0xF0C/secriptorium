@@ -77,6 +77,15 @@ export interface AdvisoryI18n {
       description: string;
     }>;
   }>;
+  sbdAttestationUi?: Record<string, string>;
+  sbdAttestationItems?: Array<{
+    id: string;
+    playbookId: '4.13' | '4.14' | 'sbd_general';
+    playbookTitle: string;
+    title: string;
+    description: string;
+    craRef: string;
+  }>;
 }
 
 export const I18N_JA: AdvisoryI18n = {
@@ -555,6 +564,20 @@ export const I18N_JA: AdvisoryI18n = {
           "description": "報告者へ公開を連絡し、同意に基づき謝辞（Hall of Fame等）を掲載"
         }
       ]
-    }
+    },
+    "sbdAttestationUi": {
+    "title": "セキュア・バイ・デザイン 最低限の証跡 (Minimum Evidence) アテステーション生成",
+    "subtitle": "ENISA Playbook 4.13, 4.14 および CRA 要件に基づき、製品のセキュリティ品質を示す最小限の証跡（Minimum Evidence）を人間用・機械処理可能形式で生成します。",
+    "noticeBadge": "🔒 完全ブラウザ完結：作成されたアテステーション・証跡宣言データはサーバーへ送信されません。生成された Markdown や CycloneDX 1.6 CDXA (JSON) を保存して管理してください。",
+    "productName": "対象製品名|証跡を宣言する製品・モジュール名（例: SafeGate-X1）",
+    "productVersion": "製品バージョン|例: v2.1.0 / Firmware 1.0.4",
+    "asserterName": "適合宣言者・組織名|適合性を宣言する個人・チーム・企業名（例: 株式会社サンプル PSIRT）",
+    "asserterRole": "担当役割|例: Product Security Lead / 開発責任者",
+    "assessmentDate": "評価・宣言実施日",
+    "checklistTitle": "✅ 最低限の証跡（Minimum Evidence）チェックリスト",
+    "generalNotes": "特記事項・補足コメント|テスト結果のURL、内部Wiki、例外事項など",
+    "btnReset": "🔄 チェックリストを初期化",
+    "resetConfirm": "すべてのチェックと証跡メモを初期化します。よろしいですか？"
+  }
   ]
 };
