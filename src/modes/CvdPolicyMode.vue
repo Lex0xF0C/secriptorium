@@ -1,13 +1,17 @@
+<!-- src/modes/CvdPolicyMode.vue -->
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { I18N_JA } from '../lib/i18n-ja'
+import { useI18n } from '../lib/i18n'
 import { generateCvdPolicy, type CvdPolicyForm } from '../lib/cvd-policy'
 import OutputPanel from '../components/OutputPanel.vue'
 import type { OutputTab } from '../lib/output'
 
-const ui = I18N_JA.cvdUi || {}
-const fields = I18N_JA.cvdFields || {}
-const presets = I18N_JA.cvdPresets || []
+const { lang, t } = useI18n()
+
+// 言語切替に応じて辞書プロパティを動的に取得
+const ui = computed(() => t.value.cvdUi || {})
+const fields = computed(() => t.value.cvdFields || {})
+const presets = computed(() => t.value.cvdPresets || [])
 
 const form = ref<CvdPolicyForm>({
   orgName: '',
@@ -29,7 +33,7 @@ const showToast = (msg: string) => {
   toastTimer = window.setTimeout(() => { toastMsg.value = '' }, 2800)
 }
 
-// クイックセットアップ（プリセット適用）
+// クイックセットアップ（言語に応じたプリセットテンプレートを適用）
 const applyPreset = (presetValues: CvdPolicyForm) => {
   form.value.scope = presetValues.scope
   form.value.reporting = presetValues.reporting
@@ -37,10 +41,11 @@ const applyPreset = (presetValues: CvdPolicyForm) => {
   form.value.timeline = presetValues.timeline
   form.value.preferences = presetValues.preferences
   form.value.acknowledgments = presetValues.acknowledgments
-  showToast('クイックセットアップのテンプレートを適用しました')
+  showToast(t.value.ui?.presetSuccess || 'Preset applied')
 }
 
-const markdownOutput = computed<string>(() => generateCvdPolicy(form.value))
+// 現在の選択言語 (lang.value) を渡して Markdown を動的生成
+const markdownOutput = computed<string>(() => generateCvdPolicy(form.value, lang.value))
 
 // OutputPanel に渡すためのタブ定義
 const tabs = computed<OutputTab[]>(() => [
@@ -57,8 +62,8 @@ const tabs = computed<OutputTab[]>(() => [
 <template>
   <main class="cols">
     <!-- 左側：入力フォームパネル -->
-    <section class="panel" aria-label="CVDポリシー入力フォーム">
-      <h2>{{ ui.cvdTitle || 'CVDポリシー作成ツール' }}</h2>
+    <section class="panel" aria-label="CVD Policy Form">
+      <h2>{{ ui.cvdTitle }}</h2>
       <p class="sub-intro">{{ ui.cvdSubtitle }}</p>
 
       <!-- トースト通知 -->
@@ -66,9 +71,9 @@ const tabs = computed<OutputTab[]>(() => [
         <span class="status toast-text">{{ toastMsg }}</span>
       </div>
 
-      <!-- 💡 初学者向けクイックセットアップ（プリセット選択） -->
-      <div class="preset-box">
-        <p class="preset-title">{{ ui.presetTitle || '💡 クイックセットアップ（組織の体制に合わせて選択すると文面が自動補完されます）' }}</p>
+      <!-- 💡 クイックセットアップ（プリセット選択） -->
+      <div class="preset-box" v-if="presets.length > 0">
+        <p class="preset-title">{{ ui.presetTitle }}</p>
         <div class="preset-buttons">
           <button
             v-for="p in presets"
@@ -84,44 +89,44 @@ const tabs = computed<OutputTab[]>(() => [
       </div>
 
       <div class="row">
-        <label>{{ fields.orgName?.split('|')[0] || '組織名・企業名' }}
+        <label>{{ fields.orgName?.split('|') }}
           <span class="hint">{{ fields.orgName?.split('|')[1] }}</span>
-          <input type="text" v-model="form.orgName" placeholder="例: 株式会社〇〇" />
+          <input type="text" v-model="form.orgName" placeholder="e.g., Sample Corp" />
         </label>
-        <label>{{ fields.contactEmail?.split('|')[0] || '報告用メールアドレス' }}
+        <label>{{ fields.contactEmail?.split('|') }}
           <span class="hint">{{ fields.contactEmail?.split('|')[1] }}</span>
           <input type="text" v-model="form.contactEmail" placeholder="security@example.com" />
         </label>
       </div>
 
-      <label>{{ fields.scope?.split('|')[0] || '適用範囲 (Scope)' }}
+      <label>{{ fields.scope?.split('|') }}
         <span class="hint">{{ fields.scope?.split('|')[1] }}</span>
-        <textarea v-model="form.scope" rows="3" placeholder="本ポリシーの対象となる製品、サービス、ドメインなど"></textarea>
+        <textarea v-model="form.scope" rows="3"></textarea>
       </label>
 
-      <label>{{ fields.reporting?.split('|')[0] || '脆弱性の報告方法 (Reporting)' }}
+      <label>{{ fields.reporting?.split('|') }}
         <span class="hint">{{ fields.reporting?.split('|')[1] }}</span>
-        <textarea v-model="form.reporting" rows="3" placeholder="報告時に含めてほしい情報や暗号化(PGP)の案内など"></textarea>
+        <textarea v-model="form.reporting" rows="3"></textarea>
       </label>
 
-      <label>{{ fields.safeHarbor?.split('|')[0] || 'セーフハーバー (Safe Harbor)' }}
+      <label>{{ fields.safeHarbor?.split('|') }}
         <span class="hint">{{ fields.safeHarbor?.split('|')[1] }}</span>
-        <textarea v-model="form.safeHarbor" rows="3" placeholder="善意で行われたセキュリティ調査に対する法的免責の明示"></textarea>
+        <textarea v-model="form.safeHarbor" rows="3"></textarea>
       </label>
 
-      <label>{{ fields.timeline?.split('|')[0] || '対応のタイムフレーム (Timeline)' }}
+      <label>{{ fields.timeline?.split('|') }}
         <span class="hint">{{ fields.timeline?.split('|')[1] }}</span>
-        <textarea v-model="form.timeline" rows="3" placeholder="初動の受領確認（例: 24〜48時間以内）や初期評価の目安"></textarea>
+        <textarea v-model="form.timeline" rows="3"></textarea>
       </label>
 
-      <label>{{ fields.preferences?.split('|')[0] || '開示の調整とエンバーゴ (Preferences)' }}
+      <label>{{ fields.preferences?.split('|') }}
         <span class="hint">{{ fields.preferences?.split('|')[1] }}</span>
-        <textarea v-model="form.preferences" rows="3" placeholder="修正プログラム公開までの調整ルールや非公開期間"></textarea>
+        <textarea v-model="form.preferences" rows="3"></textarea>
       </label>
 
-      <label>{{ fields.acknowledgments?.split('|')[0] || '謝辞 (Acknowledgments)' }}
+      <label>{{ fields.acknowledgments?.split('|') }}
         <span class="hint">{{ fields.acknowledgments?.split('|')[1] }}</span>
-        <textarea v-model="form.acknowledgments" rows="2" placeholder="発見者への謝辞掲載方針やクレジット表記に関する条件"></textarea>
+        <textarea v-model="form.acknowledgments" rows="2"></textarea>
       </label>
     </section>
 
