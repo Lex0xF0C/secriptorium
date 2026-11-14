@@ -50,7 +50,7 @@ const applyVector = () => {
     metrics.value = parsed.metrics
     parseError.value = ''
   } else {
-    parseError.value = lang.value === 'en' ? 'Invalid CVSS vector format' : 'ベクトルの形式が正しくありません (例: CVSS:3.1/AV:N/...)'
+    parseError.value = t.value.cvssUi?.invalidFormat || (lang.value === 'en' ? 'Invalid CVSS vector format' : 'ベクトルの形式が正しくありません (例: CVSS:3.1/AV:N/...)')
   }
 }
 
@@ -71,6 +71,31 @@ const severity = computed(() => severityOf(score.value))
 const severityLabel = computed(() => {
   const key = severity.value.toLowerCase()
   return t.value.sev[key] || severity.value
+})
+
+// 言語に応じた各メトリック定義の動的生成
+const localizedMetrics = computed(() => {
+  const i18nCvss = t.value.cvss || {}
+  return METRICS.map((m) => {
+    const loc = i18nCvss[m.code]
+    const name = loc ? loc[0] : m.name
+    const desc = loc ? loc[1] : m.desc
+    const optMap = loc ? loc[2] : {}
+    const options = m.options.map((opt) => {
+      const oLoc = optMap[opt.code]
+      return {
+        code: opt.code,
+        label: oLoc ? oLoc[0] : opt.label,
+        desc: oLoc ? oLoc[1] : opt.desc
+      }
+    })
+    return {
+      code: m.code,
+      name,
+      desc,
+      options
+    }
+  })
 })
 
 const tabs = computed<OutputTab[]>(() => [
@@ -104,45 +129,45 @@ const tabs = computed<OutputTab[]>(() => [
       <p class="hint">{{ t.ui.cvsss || 'Select metrics or apply vector string directly.' }}</p>
 
       <!-- バージョン切替 -->
-      <div class="bar" style="margin-top: 14px;">
-        <div class="version-switch" style="display: flex; gap: 12px; align-items: center;">
-          <label style="margin: 0; cursor: pointer;">
+      <div class="bar version-bar">
+        <div class="version-switch">
+          <label class="radio-label">
             <input 
               type="radio" 
               name="cvss-ver" 
+              class="radio-input"
               :checked="version === '3.1'" 
               @change="setVersion('3.1')" 
-              style="width: auto; margin-right: 4px;"
             /> CVSS v3.1
           </label>
-          <label style="margin: 0; cursor: pointer;">
+          <label class="radio-label">
             <input 
               type="radio" 
               name="cvss-ver" 
+              class="radio-input"
               :checked="version === '3.0'" 
               @change="setVersion('3.0')" 
-              style="width: auto; margin-right: 4px;"
             /> CVSS v3.0
           </label>
         </div>
       </div>
 
       <!-- ベクトル直接入力 -->
-      <div class="row" style="margin-top: 8px;">
-        <div style="display: flex; gap: 8px; width: 100%; grid-column: span 2;">
+      <div class="row vector-row">
+        <div class="vector-input-wrap">
           <input 
             type="text" 
             v-model="vectorInput" 
             placeholder="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H" 
             @keyup.enter="applyVector"
-            style="font-family: monospace; flex: 1;"
+            class="vector-input"
           />
           <button type="button" class="primary" @click="applyVector">
-            {{ lang === 'en' ? 'Apply' : '適用' }}
+            {{ t.cvssUi?.apply || (lang === 'en' ? 'Apply' : '適用') }}
           </button>
         </div>
       </div>
-      <p v-if="parseError" class="hint warn" style="margin-top: 4px;">{{ parseError }}</p>
+      <p v-if="parseError" class="hint warn parse-error">{{ parseError }}</p>
 
       <!-- スコアタワー -->
       <div class="score-tower" :data-severity="severity">
@@ -152,43 +177,42 @@ const tabs = computed<OutputTab[]>(() => [
 
       <!-- お助けシナリオプリセット -->
       <div class="preset-section">
-        <label style="margin-top: 0;">💡 {{ lang === 'en' ? 'Common Vulnerability Scenarios:' : 'よくある脆弱性シナリオ（クリックで反映）:' }}</label>
+        <label class="scenario-title">💡 {{ t.cvssUi?.scenariosTitle || (lang === 'en' ? 'Common Vulnerability Scenarios:' : 'よくある脆弱性シナリオ（クリックで反映）:') }}</label>
         <div class="preset-cards">
           <div class="preset-card" @click="applyPreset('CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H')">
-            <div class="preset-header">🌐 {{ lang === 'en' ? 'Unauthenticated Remote (RCE)' : 'ネットから認証なし (RCE等)' }}</div>
-            <div class="preset-desc">{{ lang === 'en' ? 'Unauthenticated remote attacker takes full control of the system over the network.' : 'インターネット公開Webアプリ等で、未認証の攻撃者が遠隔からシステムを完全に掌握する最悪のケース。' }}</div>
+            <div class="preset-header">🌐 {{ t.cvssUi?.scenarioRceTitle || (lang === 'en' ? 'Unauthenticated Remote (RCE)' : 'ネットから認証なし (RCE等)') }}</div>
+            <div class="preset-desc">{{ t.cvssUi?.scenarioRceDesc || (lang === 'en' ? 'Unauthenticated remote attacker takes full control of the system over the network.' : 'インターネット公開Webアプリ等で、未認証の攻撃者が遠隔からシステムを完全に掌握する最悪のケース。') }}</div>
           </div>
 
           <div class="preset-card" @click="applyPreset('CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N')">
-            <div class="preset-header">🖱️ {{ lang === 'en' ? 'User Interaction Required (XSS)' : 'ユーザ操作が必要 (XSS / フィッシング)' }}</div>
-            <div class="preset-desc">{{ lang === 'en' ? 'Victim performs an action (e.g. clicking a link) resulting in cross-site script execution.' : '被害者にリンク踏み等の操作をさせることで、別ドメインへ影響（スコープ変更）を及ぼすパターン。' }}</div>
+            <div class="preset-header">🖱️ {{ t.cvssUi?.scenarioXssTitle || (lang === 'en' ? 'User Interaction Required (XSS)' : 'ユーザ操作が必要 (XSS / フィッシング)') }}</div>
+            <div class="preset-desc">{{ t.cvssUi?.scenarioXssDesc || (lang === 'en' ? 'Victim performs an action (e.g. clicking a link) resulting in cross-site script execution.' : '被害者にリンク踏み等の操作をさせることで、別ドメインへ影響（スコープ変更）を及ぼすパターン。') }}</div>
           </div>
 
           <div class="preset-card" @click="applyPreset('CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H')">
-            <div class="preset-header">🛡️ {{ lang === 'en' ? 'Adjacent Network Only' : '内部ネットワーク限定サービス' }}</div>
-            <div class="preset-desc">{{ lang === 'en' ? 'Exploitable only from the same local subnet or Bluetooth/Wi-Fi proximity.' : '外部からは直接アクセスできず、同一社内LANや無線LANセグメントからの接続が前提となる脆弱性。' }}</div>
+            <div class="preset-header">🛡️ {{ t.cvssUi?.scenarioAdjTitle || (lang === 'en' ? 'Adjacent Network Only' : '内部ネットワーク限定サービス') }}</div>
+            <div class="preset-desc">{{ t.cvssUi?.scenarioAdjDesc || (lang === 'en' ? 'Exploitable only from the same local subnet or Bluetooth/Wi-Fi proximity.' : '外部からは直接アクセスできず、同一社内LANや無線LANセグメントからの接続が前提となる脆弱性。') }}</div>
           </div>
 
           <div class="preset-card" @click="applyPreset('CVSS:3.1/AV:L/AC:L/PR:H/UI:N/S:U/C:H/I:H/A:H')">
-            <div class="preset-header">💻 {{ lang === 'en' ? 'Local Privilege Escalation' : 'ローカル・管理者権限必須' }}</div>
-            <div class="preset-desc">{{ lang === 'en' ? 'Attacker with existing local access escalates privileges to administrative levels.' : '既に端末へアクセスしている状態から、さらにシステム管理者権限（root/SYSTEM）を奪うパターン。' }}</div>
+            <div class="preset-header">💻 {{ t.cvssUi?.scenarioPrivTitle || (lang === 'en' ? 'Local Privilege Escalation' : 'ローカル・管理者権限必須') }}</div>
+            <div class="preset-desc">{{ t.cvssUi?.scenarioPrivDesc || (lang === 'en' ? 'Attacker with existing local access escalates privileges to administrative levels.' : '既に端末へアクセスしている状態から、さらにシステム管理者権限（root/SYSTEM）を奪うパターン。') }}</div>
           </div>
         </div>
       </div>
 
       <!-- メトリック選択カード群 -->
       <div class="metrics-grid">
-        <fieldset v-for="def in METRICS" :key="def.code">
+        <fieldset v-for="def in localizedMetrics" :key="def.code">
           <legend>{{ def.name }}</legend>
           <p class="mdesc">{{ def.desc }}</p>
-          <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 6px;">
+          <div class="opt-list">
             <label
               v-for="opt in def.options"
               :key="opt.code"
-              class="opt"
+              class="opt metric-opt-label"
               :class="{ 'active-opt': metrics[def.code] === opt.code }"
               @click="selectOption(def.code, opt.code)"
-              style="cursor: pointer; padding: 4px 6px; border-radius: 4px; margin: 2px 0;"
             >
               <input
                 type="radio"
@@ -197,8 +221,8 @@ const tabs = computed<OutputTab[]>(() => [
                 :checked="metrics[def.code] === opt.code"
                 @change.stop="selectOption(def.code, opt.code)"
               />
-              <span :class="{ on: metrics[def.code] === opt.code }" style="font-family: monospace;">[{{ opt.code }}] {{ opt.label }}</span>
-              <span class="od" style="color: var(--sub); font-size: 0.8rem;">{{ opt.desc }}</span>
+              <span :class="{ on: metrics[def.code] === opt.code }" class="mono-code">[{{ opt.code }}] {{ opt.label }}</span>
+              <span class="od opt-desc">{{ opt.desc }}</span>
             </label>
           </div>
         </fieldset>
@@ -213,6 +237,61 @@ const tabs = computed<OutputTab[]>(() => [
 </template>
 
 <style scoped>
+.version-bar {
+  margin-top: 14px;
+}
+.version-switch {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.radio-label {
+  margin: 0;
+  cursor: pointer;
+}
+.radio-input {
+  width: auto;
+  margin-right: 4px;
+}
+.vector-row {
+  margin-top: 8px;
+}
+.vector-input-wrap {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  grid-column: span 2;
+}
+.vector-input {
+  font-family: monospace;
+  flex: 1;
+}
+.parse-error {
+  margin-top: 4px;
+}
+.scenario-title {
+  margin-top: 0;
+}
+.opt-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+.metric-opt-label {
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  margin: 2px 0;
+}
+.mono-code {
+  font-family: monospace;
+}
+.opt-desc {
+  color: var(--sub);
+  font-size: 0.8rem;
+}
+
 .score-tower {
   margin-top: 14px;
   padding: 16px;
