@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { I18N_JA } from '../lib/i18n-ja'
+import { useI18n } from '../lib/i18n'
 import {
   defaultCvdProcessForm,
   calculateProgress,
@@ -14,10 +14,12 @@ import {
 import OutputPanel from '../components/OutputPanel.vue'
 import type { OutputTab } from '../lib/output'
 
-const ui = I18N_JA.cvdProcessUi || {}
-const fields = I18N_JA.cvdProcessFields || {}
+const { lang, t } = useI18n()
 
-const form = ref<CvdProcessForm>(defaultCvdProcessForm())
+const ui = computed(() => t.value.cvdProcessUi || {})
+const fields = computed(() => t.value.cvdProcessFields || {})
+
+const form = ref<CvdProcessForm>(defaultCvdProcessForm(lang.value))
 const filterStatus = ref<'all' | 'pending' | 'done'>('all')
 
 const toastMsg = ref('')
@@ -54,20 +56,41 @@ const setPhaseState = (phase: CvdProcessPhase, completed: boolean) => {
 }
 
 const resetForm = () => {
-  if (window.confirm(ui.resetConfirm || 'チェックリストの入力をデフォルト初期状態に戻します。よろしいですか？')) {
-    form.value = defaultCvdProcessForm()
-    showToast('初期状態にリセットしました')
+  if (window.confirm(ui.value.resetConfirm || 'チェックリストの入力をデフォルト初期状態に戻します。よろしいですか？')) {
+    form.value = defaultCvdProcessForm(lang.value)
+    showToast(ui.value.resetToast || '初期状態にリセットしました')
   }
 }
 
-const markdownOutput = computed<string>(() => generateCvdProcessMarkdown(form.value))
+// 言語切替に応じてフェーズ名と項目定義を動的ローカライズ
+const localizedPhases = computed(() => {
+  const defs = t.value.cvdProcessPhases || []
+  return form.value.phases.map((phase) => {
+    const pDef = defs.find((d) => d.id === phase.id)
+    return {
+      ...phase,
+      title: pDef ? pDef.title : phase.title,
+      description: pDef ? pDef.description : phase.description,
+      items: phase.items.map((item) => {
+        const iDef = pDef?.items.find((it) => it.id === item.id)
+        return {
+          ...item,
+          title: iDef ? iDef.title : item.title,
+          description: iDef ? iDef.description : item.description,
+        }
+      })
+    }
+  })
+})
+
+const markdownOutput = computed<string>(() => generateCvdProcessMarkdown(form.value, lang.value))
 const jsonOutput = computed<string>(() => generateCvdProcessJson(form.value))
-const warnings = computed<string[]>(() => cvdProcessWarnings(form.value))
+const warnings = computed<string[]>(() => cvdProcessWarnings(form.value, lang.value))
 
 const tabs = computed<OutputTab[]>(() => [
   {
     id: 'markdown',
-    label: 'Markdown進捗レポート',
+    label: ui.value.tabMarkdown || 'Markdown進捗レポート',
     content: markdownOutput.value,
     ext: '.md',
     mime: 'text/markdown;charset=utf-8',
@@ -75,7 +98,7 @@ const tabs = computed<OutputTab[]>(() => [
   },
   {
     id: 'json',
-    label: 'JSONデータ (バックアップ)',
+    label: ui.value.tabJson || 'JSONデータ (バックアップ)',
     content: jsonOutput.value,
     ext: '.json',
     mime: 'application/json;charset=utf-8'
@@ -103,26 +126,26 @@ const tabs = computed<OutputTab[]>(() => [
 
       <!-- 案件基本情報 -->
       <fieldset class="section-box">
-        <legend>📋 1. 案件基本情報</legend>
+        <legend>📋 {{ ui.legendBasic || '1. 案件基本情報' }}</legend>
         <div class="row">
           <label>{{ fields.cveId?.split('|')[0] || '管理番号 / CVE ID' }}
             <span class="hint">{{ fields.cveId?.split('|')[1] }}</span>
-            <input type="text" v-model="form.cveId" placeholder="例: CVE-2026-0001 / CVD-2026-001" />
+            <input type="text" v-model="form.cveId" placeholder="e.g., CVE-2026-0001 / CVD-2026-001" />
           </label>
           <label>{{ fields.title?.split('|')[0] || '脆弱性件名・タイトル' }}
             <span class="hint">{{ fields.title?.split('|')[1] }}</span>
-            <input type="text" v-model="form.title" placeholder="例: ○○製品における認証回避の脆弱性" />
+            <input type="text" v-model="form.title" placeholder="e.g., Auth Bypass Flaw" />
           </label>
         </div>
 
         <div class="row">
           <label>{{ fields.reporter?.split('|')[0] || '報告者名・連絡先' }}
             <span class="hint">{{ fields.reporter?.split('|')[1] }}</span>
-            <input type="text" v-model="form.reporter" placeholder="例: JPCERT/CC / 研究者氏名" />
+            <input type="text" v-model="form.reporter" placeholder="e.g., CERT/CC, Researcher" />
           </label>
           <label>{{ fields.assignee?.split('|')[0] || '社内担当者 / PSIRT' }}
             <span class="hint">{{ fields.assignee?.split('|')[1] }}</span>
-            <input type="text" v-model="form.assignee" placeholder="例: PSIRT 開発対応班" />
+            <input type="text" v-model="form.assignee" placeholder="e.g., PSIRT Dev Team" />
           </label>
         </div>
 
@@ -148,7 +171,7 @@ const tabs = computed<OutputTab[]>(() => [
 
         <!-- フィルタリングボタン -->
         <div class="filter-bar">
-          <span class="filter-label">表示フィルター:</span>
+          <span class="filter-label">{{ ui.filterLabel || '表示フィルター:' }}</span>
           <button
             type="button"
             class="filter-btn"
@@ -180,7 +203,7 @@ const tabs = computed<OutputTab[]>(() => [
       <div class="phases-container">
         <h3 class="section-title">✅ {{ ui.phaseTitle || '対応フェーズ別チェックリスト' }}</h3>
 
-        <div v-for="phase in form.phases" :key="phase.id" class="phase-card">
+        <div v-for="phase in localizedPhases" :key="phase.id" class="phase-card">
           <div class="phase-header">
             <div>
               <h4 class="phase-title">{{ phase.title }}</h4>
@@ -188,10 +211,10 @@ const tabs = computed<OutputTab[]>(() => [
             </div>
             <div class="phase-actions">
               <button type="button" class="btn-phase-action" @click="setPhaseState(phase, true)">
-                全完了
+                {{ ui.btnAllDone || '全完了' }}
               </button>
               <button type="button" class="btn-phase-action" @click="setPhaseState(phase, false)">
-                解除
+                {{ ui.btnAllClear || '解除' }}
               </button>
             </div>
           </div>
@@ -218,7 +241,7 @@ const tabs = computed<OutputTab[]>(() => [
 
               <div class="item-meta">
                 <div class="item-date-input">
-                  <span class="meta-label">完了日:</span>
+                  <span class="meta-label">{{ ui.completedDateLabel || '完了日:' }}</span>
                   <input
                     type="date"
                     v-model="item.completedDate"
@@ -229,7 +252,7 @@ const tabs = computed<OutputTab[]>(() => [
                   <input
                     type="text"
                     v-model="item.notes"
-                    placeholder="メモ・関連URL・対応者など"
+                    :placeholder="ui.notesPh || 'メモ・関連URL・対応者など'"
                   />
                 </div>
               </div>
@@ -245,7 +268,7 @@ const tabs = computed<OutputTab[]>(() => [
         <textarea
           v-model="form.generalNotes"
           rows="3"
-          placeholder="非公開情報、検証環境、ステークホルダーとの事前調整メモなど"
+          :placeholder="ui.generalNotesPh || '非公開情報、検証環境、ステークホルダーとの事前調整メモなど'"
         ></textarea>
       </fieldset>
     </section>
@@ -298,8 +321,9 @@ const tabs = computed<OutputTab[]>(() => [
   margin: 20px 0 12px 0;
   color: var(--ink);
 }
+
 .progress-box {
-  background: var(--panel);
+  background: var(--bg);
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 12px 14px;
@@ -310,61 +334,65 @@ const tabs = computed<OutputTab[]>(() => [
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
-  flex-wrap: wrap;
-  gap: 8px;
 }
 .progress-title {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: var(--ink);
 }
 .btn-reset {
-  font-size: 0.78rem;
-  padding: 3px 8px;
-  background: var(--bg);
+  background: transparent;
+  border: 1px solid var(--line);
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  border-radius: 4px;
+  color: var(--sub);
+}
+.btn-reset:hover {
+  color: var(--ink);
+  border-color: var(--ink);
 }
 .cvd-progress-bar {
   width: 100%;
-  height: 10px;
-  border-radius: 5px;
+  height: 8px;
+  border-radius: 4px;
   overflow: hidden;
-  appearance: none;
-  border: none;
-  background-color: var(--line);
+  margin-bottom: 10px;
 }
 .cvd-progress-bar::-webkit-progress-bar {
   background-color: var(--line);
-  border-radius: 5px;
 }
 .cvd-progress-bar::-webkit-progress-value {
   background-color: var(--accent);
-  border-radius: 5px;
-  transition: width 0.3s ease;
 }
-.cvd-progress-bar::-moz-progress-bar {
-  background-color: var(--accent);
-  border-radius: 5px;
-}
+
 .filter-bar {
   display: flex;
-  gap: 6px;
   align-items: center;
-  margin-top: 10px;
-  font-size: 0.82rem;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
 }
 .filter-label {
+  font-size: 0.8rem;
   color: var(--sub);
+  margin-right: 4px;
 }
 .filter-btn {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 3px 8px;
   font-size: 0.78rem;
-  padding: 2px 8px;
-  background: var(--bg);
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--sub);
 }
 .filter-btn.active {
   background: var(--accent);
-  color: var(--accent-ink);
+  color: #fff;
   border-color: var(--accent);
-  font-weight: 600;
 }
+
 .phases-container {
   display: flex;
   flex-direction: column;
@@ -374,24 +402,26 @@ const tabs = computed<OutputTab[]>(() => [
 .phase-card {
   border: 1px solid var(--line);
   border-radius: 6px;
+  background: var(--bg);
   padding: 12px;
-  background: var(--panel);
 }
 .phase-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
   gap: 12px;
 }
 .phase-title {
-  font-size: 0.95rem;
   margin: 0 0 2px 0;
+  font-size: 0.95rem;
   color: var(--ink);
 }
 .phase-desc {
-  font-size: 0.8rem;
   margin: 0;
+  font-size: 0.78rem;
   color: var(--sub);
 }
 .phase-actions {
@@ -400,81 +430,93 @@ const tabs = computed<OutputTab[]>(() => [
   flex-shrink: 0;
 }
 .btn-phase-action {
-  font-size: 0.75rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
   padding: 2px 6px;
-  background: var(--bg);
+  font-size: 0.72rem;
+  border-radius: 3px;
+  cursor: pointer;
+  color: var(--sub);
 }
+.btn-phase-action:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
 .checklist-items {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 .item-row {
-  border: 1px solid var(--line);
-  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   padding: 8px 10px;
-  background: var(--bg);
-  transition: all 0.2s ease;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  transition: all 0.2s;
 }
 .item-row.completed {
   border-color: var(--accent);
   background: rgba(76, 184, 203, 0.05);
 }
 .item-main {
-  margin-bottom: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 .checkbox-container {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
-  margin: 0 0 2px 0;
+  margin: 0 !important;
 }
 .checkbox-container input[type="checkbox"] {
   width: auto;
-  cursor: pointer;
+  margin: 0;
 }
 .item-title {
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--ink);
 }
-.item-row.completed .item-title {
-  text-decoration: line-through;
-  opacity: 0.85;
-}
 .item-desc {
-  font-size: 0.8rem;
+  margin: 0 0 0 22px;
+  font-size: 0.78rem;
   color: var(--sub);
-  margin: 0 0 0 24px;
+  line-height: 1.3;
 }
 .item-meta {
-  display: grid;
-  grid-template-columns: 140px 1fr;
-  gap: 8px;
-  margin-left: 24px;
-}
-@media (max-width: 560px) {
-  .item-meta {
-    grid-template-columns: 1fr;
-  }
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-left: 22px;
+  flex-wrap: wrap;
 }
 .item-date-input {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.78rem;
 }
 .meta-label {
+  font-size: 0.75rem;
   color: var(--sub);
-  white-space: nowrap;
 }
-.item-date-input input {
-  padding: 2px 4px;
-  font-size: 0.78rem;
-}
-.item-notes-input input {
+.item-date-input input[type="date"] {
   padding: 2px 6px;
   font-size: 0.78rem;
+  height: auto;
+}
+.item-notes-input {
+  flex: 1;
+  min-width: 180px;
+}
+.item-notes-input input[type="text"] {
+  padding: 3px 6px;
+  font-size: 0.78rem;
+  height: auto;
 }
 </style>
