@@ -1,8 +1,20 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from '../lib/i18n'
 import type { OutputTab } from '../lib/output'
 
 const props = defineProps<{ tabs: OutputTab[]; baseName: string }>()
+const { lang, t } = useI18n()
+
+const outTexts = computed(() => t.value.out || {
+  label: '出力',
+  copy: 'コピー',
+  copied: 'コピーしました',
+  copyFail: 'コピーできませんでした。範囲選択して手動でコピーしてください',
+  saveAs: '{ext} で保存',
+  saved: '保存しました',
+  missing: 'この形式として足りない項目：'
+})
 
 const current = ref(0)
 const msg = ref('')
@@ -16,9 +28,9 @@ function flash(text: string) {
 async function copy() {
   try {
     await navigator.clipboard.writeText(active.value.content)
-    flash('コピーしました')
+    flash(outTexts.value.copied)
   } catch {
-    flash('コピーできませんでした。範囲選択して手動でコピーしてください')
+    flash(outTexts.value.copyFail)
   }
 }
 
@@ -32,29 +44,29 @@ function download() {
   a.click()
   a.remove()
   window.setTimeout(() => URL.revokeObjectURL(a.href), 1000)
-  flash('保存しました')
+  flash(outTexts.value.saved)
 }
 </script>
 
 <template>
-  <section class="panel out" aria-label="出力">
+  <section class="panel out" :aria-label="outTexts.label">
     <div class="tabs" role="tablist">
       <button
-        v-for="(t, i) in tabs"
-        :key="t.id"
+        v-for="(tabItem, i) in tabs"
+        :key="tabItem.id"
         type="button"
         role="tab"
         :aria-selected="i === current"
         :class="{ on: i === current }"
         @click="current = i"
-      >{{ t.label }}</button>
+      >{{ tabItem.label }}</button>
     </div>
     <p v-if="active.warnings && active.warnings.length" class="warn">
-      この形式として足りない項目：{{ active.warnings.join('、') }}
+      {{ outTexts.missing }}{{ active.warnings.join(lang === 'en' ? ', ' : '、') }}
     </p>
     <div class="bar">
-      <button type="button" class="primary" @click="copy">コピー</button>
-      <button type="button" @click="download">{{ active.ext }} で保存</button>
+      <button type="button" class="primary" @click="copy">{{ outTexts.copy }}</button>
+      <button type="button" @click="download">{{ outTexts.saveAs.replace('{ext}', active.ext) }}</button>
       <span class="status" role="status">{{ msg }}</span>
     </div>
     <pre>{{ active.content }}</pre>

@@ -23,7 +23,7 @@ const currentComponent = shallowRef(AdvisoryMode)
 const modes = computed(() => [
   { key: 'advisory' as ModeKey, label: t.value.ui.h1 || '脆弱性アドバイザリ', component: AdvisoryMode, enabled: true },
   { key: 'vex' as ModeKey, label: t.value.vex?.title || '製品ポートフォリオ VEX', component: VexMode, enabled: true }, 
-  { key: 'sbom' as ModeKey, label: 'SBOM / VEX', component: SbomMode, enabled: true },
+  { key: 'sbom' as ModeKey, label: t.value.sbomUi?.titleShort || 'SBOM / VEX', component: SbomMode, enabled: true },
   { key: 'cvss' as ModeKey, label: t.value.ui.cvssl || 'CVSS v3.x 計算機', component: CvssCalculatorMode, enabled: true },
   { key: 'securitytxt' as ModeKey, label: t.value.ui.securityTxtTitle || 'security.txt 作成', component: SecurityTxtMode, enabled: true },
   { key: 'cvd' as ModeKey, label: t.value.cvdUi?.cvdTitle || 'CVDポリシー', component: CvdPolicyMode, enabled: true },
@@ -103,31 +103,33 @@ const switchMode = (mode: any) => {
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
+  margin-bottom: 6px;
 }
 .header-main-bar h1 {
   margin: 0;
 }
 .lang-switcher {
   display: flex;
-  gap: 4px;
-  background: var(--panel);
-  border: 1px solid var(--line);
-  padding: 3px;
-  border-radius: 6px;
+  gap: 6px;
+  align-items: center;
 }
 .btn-lang {
-  font-size: 0.8rem;
-  padding: 4px 8px;
-  background: transparent;
-  border: none;
+  padding: 4px 10px;
+  font-size: 0.85rem;
   border-radius: 4px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--ink);
   cursor: pointer;
-  color: var(--sub);
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
+}
+.btn-lang:hover {
+  border-color: var(--accent);
 }
 .btn-lang.active {
   background: var(--accent);
   color: var(--accent-ink);
+  border-color: var(--accent);
   font-weight: 600;
 }
 </style>

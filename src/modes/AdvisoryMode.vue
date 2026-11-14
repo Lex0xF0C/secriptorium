@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { I18N_JA } from '../lib/i18n-ja'
+import { useI18n } from '../lib/i18n'
 import OutputPanel from '../components/OutputPanel.vue'
 import type { OutputTab } from '../lib/output'
 import CvssPicker from '../components/CvssPicker.vue'
 import { cvssSummary } from '../lib/cvss'
 import { buildCsaf, csafWarnings, type AdvisoryForm } from '../lib/advisory'
 
-const L = I18N_JA
+const { lang, t } = useI18n()
+const L = computed(() => t.value)
 
 // フォームの入力状態（すべてメモリ内の ref で管理）
 const status = ref('normal')
@@ -37,15 +38,14 @@ const hist = ref('')
 const contact = ref('')
 
 // 製品リスト
-interface Product {
+interface ProdItem {
   name: string
   ver: string
 }
-const prods = ref<Product[]>([{ name: '', ver: '' }])
+const prods = ref<ProdItem[]>([
+  { name: '', ver: '' }
+])
 
-// 自動入力のトラッキング用
-const autoDesc = ref('')
-const autoImpact = ref('')
 const toastMsg = ref('')
 let toastTimer: number | null = null
 
@@ -55,7 +55,6 @@ const showToast = (msg: string) => {
   toastTimer = window.setTimeout(() => { toastMsg.value = '' }, 2800)
 }
 
-// 製品の追加・削除
 const addProd = () => prods.value.push({ name: '', ver: '' })
 const removeProd = (idx: number) => {
   prods.value.splice(idx, 1)
@@ -88,10 +87,12 @@ watch(vector, (v) => {
 })
 
 // CWE選択連動（候補から選ばれたら説明と脅威の例文を自動挿入）
+const autoDesc = ref('')
+const autoImpact = ref('')
 const handleCweChange = () => {
   const val = cwe.value.trim()
   const cweKey = val.split(' ')[0]
-  const tx = L.cweText[cweKey]
+  const tx = L.value.cweText[cweKey]
   if (!tx) return
 
   let skipped = 0
@@ -102,7 +103,7 @@ const handleCweChange = () => {
     skipped++
   }
 
-  const impText = L.imp[tx[1]] || tx[1]
+  const impText = L.value.imp[tx[1]] || tx[1]
   if (!impact.value.trim() || impact.value === autoImpact.value) {
     impact.value = impText
     autoImpact.value = impText
@@ -110,12 +111,12 @@ const handleCweChange = () => {
     skipped++
   }
 
-  showToast(skipped ? L.ui.autoSkip : L.ui.autoOk)
+  showToast(skipped ? L.value.ui.autoSkip : L.value.ui.autoOk)
 }
 
 // 定型文ボタン（presets）の挿入ハンドラ
 const applyPreset = (targetField: string, textTemplate: string) => {
-  const resolvedText = L.imp[textTemplate] || textTemplate
+  const resolvedText = L.value.imp[textTemplate] || textTemplate
   
   switch (targetField) {
     case 'summary':
@@ -143,7 +144,7 @@ const applyPreset = (targetField: string, textTemplate: string) => {
       contact.value = contact.value ? contact.value + '\n' + resolvedText : resolvedText
       break
   }
-  showToast('定型文を挿入しました')
+  showToast(L.value.ui.presetSuccess || (lang.value === 'en' ? 'Inserted template text' : '定型文を挿入しました'))
 }
 
 // フォーム入力値を advisory.ts の AdvisoryForm 型構造に集約
@@ -168,17 +169,17 @@ const formObject = computed<AdvisoryForm>(() => ({
 
 // Markdown生成ロジック
 const markdownOutput = computed(() => {
-  const U = L.ui
+  const U = L.value.ui
   const Ls: string[] = []
   const m: [string, string][] = []
   const sevk = calculatedSev.value
-  const sevName = sevk ? L.sev[sevk] : ''
+  const sevName = sevk ? L.value.sev[sevk] : ''
 
   const cleanTitle = title.value.trim().replace(/\s*\n\s*/g, ' ') || U.untitled
   Ls.push(`# ${cleanTitle}`, '')
 
   if (aid.value.trim()) m.push([U.mid, aid.value.trim()])
-  if (sevName) m.push([U.msev, score.value.trim() ? L.ui.fSev.replace('{s}', sevName).replace('{n}', score.value.trim()) : sevName])
+  if (sevName) m.push([U.msev, score.value.trim() ? L.value.ui.fSev.replace('{s}', sevName).replace('{n}', score.value.trim()) : sevName])
   if (pub.value) m.push([U.mpub, pub.value])
   if (upd.value) m.push([U.mupd, upd.value])
 
@@ -188,7 +189,7 @@ const markdownOutput = computed(() => {
     Ls.push('')
   }
 
-  const statText = L.stat[status.value] || ''
+  const statText = L.value.stat[status.value] || ''
   const sm = [statText, summary.value.trim()].filter(Boolean).join('\n\n')
   if (sm) Ls.push(`## ${U.oOver}`, '', sm, '')
 
@@ -207,8 +208,8 @@ const markdownOutput = computed(() => {
   if (desc.value.trim() || cweVal) {
     Ls.push(`## ${U.oDesc}`, '')
     if (desc.value.trim()) Ls.push(desc.value.trim(), '')
-    if (cweVal === L.unk) {
-      Ls.push(L.ui.fCweUnk.replace('{t}', cwenote.value.trim().replace(/\n/g, ' ')), '')
+    if (cweVal === L.value.unk) {
+      Ls.push(L.value.ui.fCweUnk.replace('{t}', cwenote.value.trim().replace(/\n/g, ' ')), '')
     } else if (cweVal) {
       Ls.push(`- ${cweVal}`, '')
     }
@@ -219,13 +220,13 @@ const markdownOutput = computed(() => {
     if (impact.value.trim()) Ls.push(impact.value.trim(), '')
     if (score.value.trim()) {
       const ver = cvssSummary(vector.value)?.version ?? '3.1'
-      Ls.push(L.ui.fCvss.replace('v3.1', 'v' + ver).replace('{n}', score.value.trim()).replace('{s}', sevName))
+      Ls.push(L.value.ui.fCvss.replace('v3.1', 'v' + ver).replace('{n}', score.value.trim()).replace('{s}', sevName))
     }
-    if (vector.value.trim()) Ls.push(L.ui.fVec.replace('{v}', vector.value.trim()))
+    if (vector.value.trim()) Ls.push(L.value.ui.fVec.replace('{v}', vector.value.trim()))
     Ls.push('')
   }
 
-  const activeFix = fix.value.trim() || (status.value === 'eol' ? L.eolfix : '')
+  const activeFix = fix.value.trim() || (status.value === 'eol' ? L.value.eolfix : '')
   if (activeFix) Ls.push(`## ${U.oFix}`, '', activeFix, '')
   if (work.value.trim()) Ls.push(`## ${U.oWork}`, '', work.value.trim(), '')
 
@@ -260,10 +261,10 @@ const tabs = computed<OutputTab[]>(() => [
   {
     id: 'csaf',
     label: 'CSAF 2.0 (JSON)',
-    content: JSON.stringify(buildCsaf(formObject.value), null, 2),
+    content: JSON.stringify(buildCsaf(formObject.value, lang.value), null, 2),
     ext: '.json',
     mime: 'application/json;charset=utf-8',
-    warnings: csafWarnings(formObject.value)
+    warnings: csafWarnings(formObject.value, lang.value)
   }
 ])
 </script>
@@ -301,12 +302,12 @@ const tabs = computed<OutputTab[]>(() => [
         <!-- CSAF 発行者情報（組織名・URL） -->
         <div class="row">
           <div>
-            <label>発行者名（組織名・PSIRT名）</label>
-            <input type="text" v-model="publisherName" placeholder="例：株式会社サンプル PSIRT" />
+            <label>{{ L.ui.csafPubName }}</label>
+            <input type="text" v-model="publisherName" :placeholder="L.ui.csafPubNamePh" />
           </div>
           <div>
-            <label>発行者URL（Namespace）</label>
-            <input type="url" v-model="publisherNamespace" placeholder="https://example.co.jp" />
+            <label>{{ L.ui.csafPubNs }}</label>
+            <input type="url" v-model="publisherNamespace" :placeholder="L.ui.csafPubNsPh" />
           </div>
         </div>
 
@@ -378,7 +379,7 @@ const tabs = computed<OutputTab[]>(() => [
               </button>
             </div>
           </div>
-          <textarea v-model="versioncheck" rows="2" placeholder="確認手順を入力..."></textarea>
+          <textarea v-model="versioncheck" rows="2" :placeholder="L.ui.versionCheckPh"></textarea>
         </div>
 
         <!-- 脆弱性の種類（CWE選択連動） -->
@@ -386,7 +387,7 @@ const tabs = computed<OutputTab[]>(() => [
           <label>{{ L.ui.cwel.split('|')[0] }}</label>
           <p class="hint">{{ L.ui.cwel.split('|')[1] }}</p>
           <select v-model="cwe" @change="handleCweChange">
-            <option value="">-- CWEを選択してください --</option>
+            <option value="">{{ L.ui.cweSelectPrompt }}</option>
             <option :value="CWE_OTHER">{{ L.ui.cweo }}</option>
             <option :value="L.unk">{{ L.unk }}</option>
             <option v-for="c in L.cwes" :key="c" :value="c">{{ c }}</option>
@@ -420,7 +421,7 @@ const tabs = computed<OutputTab[]>(() => [
               </button>
             </div>
           </div>
-          <textarea v-model="desc" rows="4" placeholder="脆弱性の詳細な説明..."></textarea>
+          <textarea v-model="desc" rows="4" :placeholder="L.ui.descPh"></textarea>
         </div>
 
         <!-- 脅威（Impact） + プリセットボタン -->
@@ -438,7 +439,7 @@ const tabs = computed<OutputTab[]>(() => [
               </button>
             </div>
           </div>
-          <textarea v-model="impact" rows="3" placeholder="もたらされる脅威..."></textarea>
+          <textarea v-model="impact" rows="3" :placeholder="L.ui.impactPh"></textarea>
         </div>
 
         <!-- CVSS 基本スコア & ベクター -->
@@ -449,7 +450,7 @@ const tabs = computed<OutputTab[]>(() => [
           </div>
           <div>
             <label>{{ L.ui.sevl }}</label>
-            <input type="text" :value="calculatedSev ? L.sev[calculatedSev] : ''" disabled placeholder="自動判定" />
+            <input type="text" :value="calculatedSev ? L.sev[calculatedSev] : ''" disabled :placeholder="L.ui.autoSevPh" />
           </div>
         </div>
         <div>
@@ -478,7 +479,7 @@ const tabs = computed<OutputTab[]>(() => [
               </button>
             </div>
           </div>
-          <textarea v-model="fix" rows="3" placeholder="修正版の入手先や適用手順..."></textarea>
+          <textarea v-model="fix" rows="3" :placeholder="L.ui.fixPh"></textarea>
         </div>
 
         <!-- 回避策 + プリセット -->
@@ -496,13 +497,13 @@ const tabs = computed<OutputTab[]>(() => [
               </button>
             </div>
           </div>
-          <textarea v-model="work" rows="2" placeholder="回避策..."></textarea>
+          <textarea v-model="work" rows="2" :placeholder="L.ui.workPh"></textarea>
         </div>
 
         <!-- 関連情報 -->
         <div>
           <label>{{ L.ui.refl }}</label>
-          <textarea v-model="refs" rows="2" placeholder="https://jvn.jp/..."></textarea>
+          <textarea v-model="refs" rows="2" placeholder="https://..."></textarea>
         </div>
 
         <!-- 謝辞 + プリセット -->
@@ -520,7 +521,7 @@ const tabs = computed<OutputTab[]>(() => [
               </button>
             </div>
           </div>
-          <input type="text" v-model="credit" placeholder="発見者への謝辞..." />
+          <input type="text" v-model="credit" :placeholder="L.ui.creditPh" />
         </div>
 
         <!-- 連絡先 + プリセット -->
@@ -538,7 +539,7 @@ const tabs = computed<OutputTab[]>(() => [
               </button>
             </div>
           </div>
-          <textarea v-model="contact" rows="2" placeholder="問い合わせ窓口..."></textarea>
+          <textarea v-model="contact" rows="2" :placeholder="L.ui.contactPh"></textarea>
         </div>
       </form>
     </div>

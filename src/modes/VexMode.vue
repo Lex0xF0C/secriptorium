@@ -4,7 +4,6 @@ import { ref, computed } from 'vue'
 import { useI18n } from '../lib/i18n'
 import {
   type VexForm,
-  type VexProductStatus,
   defaultVexForm,
   parseTsvVexProducts,
   buildCsafVex,
@@ -52,8 +51,8 @@ const importTsv = () => {
   }
 }
 
-const csafVexJson = computed(() => JSON.stringify(buildCsafVex(form.value), null, 2))
-const warnings = computed(() => vexWarnings(form.value))
+const csafVexJson = computed(() => JSON.stringify(buildCsafVex(form.value, lang.value), null, 2))
+const warnings = computed(() => vexWarnings(form.value, lang.value))
 
 const tabs = computed<OutputTab[]>(() => [
   {
@@ -79,7 +78,7 @@ const tabs = computed<OutputTab[]>(() => [
 
       <!-- メタデータ入力 -->
       <fieldset class="section-box">
-        <legend>📝 {{ lang === 'en' ? 'VEX Metadata' : 'VEX 文書メタデータ' }}</legend>
+        <legend>📝 {{ t.vex?.metadataLegend || (lang === 'en' ? 'VEX Metadata' : 'VEX 文書メタデータ') }}</legend>
         <div class="row">
           <label>{{ t.vex?.cveLabel }}
             <input type="text" v-model="form.cve" :placeholder="t.vex?.cvePh" />
